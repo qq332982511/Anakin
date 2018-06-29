@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 Anakin Authors, Inc. All Rights Reserved.
+/* Copyright (c) 2018 Baidu, Inc. All Rights Reserved.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -33,6 +33,9 @@
 #include "saber/funcs/impl/arm/saber_activation.h"
 #endif
 
+#ifdef USE_BM
+#include "saber/funcs/impl/bm/vender_activation.h"
+#endif
 namespace anakin {
 namespace saber {
 
@@ -73,7 +76,6 @@ public:
                                              Output_v &output, Param_t &param) override {
 
         Shape output_shape = (input[0]->valid_shape());
-        output[0]->set_seq_offset(input[0]->get_seq_offset());
         return output[0]->set_shape(output_shape);
     }
 

@@ -19,7 +19,7 @@
 #include "core/shape.h"
 #include "core/events.h"
 #include "core/tensor_traits.h"
-
+#include <typeinfo>
 namespace anakin{
 
 namespace saber{
@@ -91,7 +91,7 @@ public:
         _shape = shape;
         _valid_shape = shape;
         _offset = Shape::zero(shape.dims());
-        _buf = std::make_shared<Buffer<TargetType>>(shape.count() * _type_len);
+        _buf = std::make_shared<Buffer<TargetType>>(shape.count() * _type_len());
         _is_subbuf = false;
     }
 #if 0
@@ -131,7 +131,35 @@ public:
         BufferMemShare(_buf, buf_from_date);
         _is_subbuf = false;
     }
+#ifdef USE_BM
+    /**
+     * \brief Constructor with allocated data ptr and entire memory shape. only for BM
+    */
+    template <typename Dtype_s,typename TargetType_t>
+    Tensor(Dtype_s* data_ptr, TargetType_t target, int id, Shape shape) {
+        CHECK_EQ(shape.dims(), TensorAPI::layout_dims::value) << \
+            "shape dims is not matched to layout type";
+        _shape = shape;
+        _valid_shape = shape;
+        _offset = Shape::zero(shape.dims());
 
+        if(typeid(Dtype_s) == typeid(AK_FLOAT))
+        {
+        std::shared_ptr<Buffer<TargetType_t>> buf_from_date = \
+            std::make_shared<Buffer<TargetType_t>>(&bm_mem_from_system(const_cast<Dtype_s *>(data_ptr)), shape.count() * _type_len(), id);
+
+        BufferMemShare(_buf, buf_from_date);
+        }
+        else
+        {
+        std::shared_ptr<Buffer<TargetType_t>> buf_from_date = \
+            std::make_shared<Buffer<TargetType_t>>(data_ptr, shape.count() * _type_len(), id);
+
+        BufferMemShare(_buf, buf_from_date);
+        }
+        _is_subbuf = false;
+    }
+#endif
     /**
      * \brief Copy constructor, shallow copy.
      */
@@ -225,7 +253,7 @@ public:
         _shape = shape;
         _valid_shape = _shape;
         _offset =Shape::zero(_shape.dims());
-        _buf->alloc(_shape.count() * _type_len);
+        _buf->alloc(_shape.count() * _type_len());
         return SaberSuccess;
     }
 
@@ -287,13 +315,13 @@ public:
             CHECK_EQ(_valid_shape + _offset <= _shape, true) << \
                 "valid_shape + offet should <= shape";
         }
-        bool exceed_flag = _shape.count() * _type_len > _buf->get_capacity() \
+        bool exceed_flag = _shape.count() * _type_len() > _buf->get_capacity() \
             && (_is_subbuf || _is_shared);
         //if (exceed_flag) {
         //    return SaberOutOfAuthority;
         //}
         CHECK_EQ(exceed_flag, false) << "shared tensor shape exceed origin data buffer size";
-        SABER_CHECK(_buf->re_alloc(_shape.count() * _type_len));
+        SABER_CHECK(_buf->re_alloc(_shape.count() * _type_len()));
         return SaberSuccess;
     }
 
@@ -530,7 +558,7 @@ public:
         CHECK_EQ(_shape > Shape::zero(TensorAPI::layout_dims::value), true) << \
             "current tensor is not initialized (no shape info, use set_shape)";
         typedef typename Tensor_t::Dtype dtype_t;
-        CHECK_LE(size() * _type_len, tensor.size() * sizeof(dtype_t)) << \
+        CHECK_LE(size() * _type_len(), tensor.size() * sizeof(dtype_t)) << \
             "current tensor size should <= input tensor size";
 
         _is_shared = BufferMemShare(_buf, tensor.get_buf()) > 0;
@@ -600,7 +628,7 @@ public:
             Dtype* ptr_dst = mutable_data();
             const Dtype* ptr_src = tensor.data();
             process_API::sync_memcpy(ptr_dst, device_id(), ptr_src, tensor.device_id(), \
-                _type_len * valid_size(), flag_type());
+                _type_len() * valid_size(), flag_type());
             return SaberSuccess;
         }
 
@@ -718,10 +746,19 @@ public:
             Dtype* ptr_dst = dst + idx_dst;//_buf->get_data_mutable() + idx_dst;
             const Dtype* ptr_src = src + idx_src;//tensor.get_buf()->get_data() + idx_src;
             process_API::sync_memcpy(ptr_dst, device_id(), ptr_src, tensor.device_id(), \
-                _type_len * cpy_len, flag_type());
+                _type_len() * cpy_len, flag_type());
         }
         return SaberSuccess;
     }
+
+#ifdef USE_BM
+    template <typename NewTargetType_t, DataType NewDataType_t, typename NewLayOutType_t>
+    SaberStatus copy_from(const Tensor<NewTargetType_t, NewDataType_t, NewLayOutType_t>& tensor) {
+        LOG(WARNING) << "Invalid: copy_from is not allowed for current type.";
+        return SaberInvalidValue;
+    }
+
+#endif
 
     /**
      * \brief Asynchronously copy entire buffer from source tensor.
@@ -752,7 +789,7 @@ public:
             Dtype* ptr_dst = mutable_data();
             const Dtype* ptr_src = tensor.data();
             process_API::async_memcpy(ptr_dst, device_id(), ptr_src, tensor.device_id(), \
-                _type_len * valid_size(), stream, flag_type());
+                _type_len() * valid_size(), stream, flag_type());
             return SaberSuccess;
         }
 
@@ -870,7 +907,7 @@ public:
             Dtype* ptr_dst = dst + idx_dst;//_buf->get_data_mutable() + idx_dst;
             const Dtype* ptr_src = src + idx_src;//tensor.get_buf()->get_data() + idx_src;
             process_API::async_memcpy(ptr_dst, device_id(), ptr_src, tensor.device_id(), \
-                _type_len * cpy_len, stream, flag_type());
+                _type_len() * cpy_len, stream, flag_type());
         }
         return SaberSuccess;
     }
@@ -900,7 +937,9 @@ public:
 
 private:
     ///< Length of datatype.
-    size_t _type_len{sizeof(dtype)};
+    size_t _type_len(){
+        return sizeof(Dtype);
+    }
     ///< Represent the raw mem shape.
     Shape _shape;
     ///< Represent the mem you have right to access shape.
@@ -930,6 +969,87 @@ private:
 
     std::vector<int> _seq_offset;
 };
+
+#ifdef USE_BM
+
+#ifndef BM_TENSOR_COPY
+#define BM_TENSOR_COPY
+
+
+template<> inline
+size_t Tensor<BM, AK_BM, NCHW>::_type_len(){
+    return 4;
+}
+
+template<>
+template<> inline
+SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<X86, AK_FLOAT, NCHW>(const Tensor<X86, AK_FLOAT, NCHW>& tensor) {
+    LOG(INFO) << "BM copy_from X86";
+    CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+    auto* device_data_ptr = mutable_data();
+    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(const_cast<float *>(tensor.data()))));
+    return SaberSuccess;
+}
+
+template<>
+template<> inline
+SaberStatus Tensor<X86, AK_FLOAT, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
+    LOG(INFO) << "X86 copy_from BM";
+    CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+    auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
+    BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
+    return SaberSuccess;
+}
+
+/*
+    template<> inline
+    size_t Tensor<BM, AK_BM, NCHW>::_type_len(){
+        return 4;
+    }
+
+    template<>
+    template<> inline
+    SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<X86, AK_FLOAT, NCHW>(const Tensor<X86, AK_FLOAT, NCHW>& tensor) {
+        LOG(INFO) << "BM copy_from X86";
+        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+        auto* device_data_ptr = mutable_data();
+        BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(const_cast<float *>(tensor.data()))));
+        //BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *(bm_device_mem_t *)(mutable_data()), bm_mem_from_system(tensor.data())));
+        return SaberSuccess;
+    }
+
+    template<>
+    template<> inline
+    SaberStatus Tensor<X86, AK_FLOAT, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
+        LOG(INFO) << "X86 copy_from BM";
+        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+        auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
+        BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
+        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *(bm_device_mem_t *)(tensor.data())));
+        return SaberSuccess;
+    }
+
+    template<>
+    template<> inline
+    SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
+        LOG(INFO) << "BM copy_from BM";
+        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+        auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
+        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
+        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *(bm_device_mem_t *)(tensor.data())));
+        return SaberSuccess;
+    }
+*/
+
+#endif
+
+#endif
+
 
 } //namespace saber
 

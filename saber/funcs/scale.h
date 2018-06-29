@@ -32,6 +32,11 @@
 //todo
 #include "saber/funcs/impl/impl_scale.h"
 #endif
+
+#ifdef USE_BM
+#include "saber/funcs/impl/bm/vender_scale.h"
+#endif
+
 namespace anakin {
 namespace saber {
 
@@ -78,7 +83,10 @@ public:
     virtual SaberStatus init_impl(ImplEnum implenum) override {
         switch (implenum) {
             case VENDER_IMPL:
-                return SaberUnImplError;
+                this->_impl.push_back(new VenderScale <TargetType,
+                OpDtype, inDtype, outDtype,
+                LayOutType_op, LayOutType_in, LayOutType_out>);
+                return SaberSuccess;
 
             case SABER_IMPL:
                 this->_impl.push_back(new SaberScale <TargetType,

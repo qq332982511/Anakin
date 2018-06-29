@@ -29,6 +29,11 @@
 #ifdef USE_ARM_PLACE
 #include "saber/funcs/impl/arm/saber_pooling.h"
 #endif
+
+#ifdef USE_BM
+#include "saber/funcs/impl/bm/vender_pooling.h"
+#endif
+
 namespace anakin {
 namespace saber {
 

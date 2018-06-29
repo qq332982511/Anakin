@@ -18,6 +18,7 @@
 #include "anakin_config.h"
 #include <vector>
 #include <string>
+#include <type_traits>
 #include "saber/core/shape.h"
 #include "saber/core/tensor.h"
 #include "saber/saber_types.h"
@@ -393,6 +394,7 @@ private:
     opTensor* bias_tensor;
 };
 // specify for int8
+#ifdef USE_CUDA
 template <>
 struct ConvParam<Tensor<NV, AK_INT8, NCHW> > {
     ConvParam() : group(-1), pad_h(-1), pad_w(-1),
@@ -548,6 +550,90 @@ private:
     Tensor<NV, AK_INT8, NCHW_C4>* weight_tensor;
     Tensor<NV, AK_FLOAT, NCHW>* bias_tensor;
 };
+#endif //USE_CUDA
+
+#ifdef USE_BM
+template <>
+struct ConvParam<Tensor<BM, AK_BM, NCHW> > {
+    ConvParam() : group(-1), pad_h(-1), pad_w(-1),
+                  stride_h(-1), stride_w(-1),
+                  dilation_h(-1), dilation_w(-1),
+                  weight_tensor(NULL), bias_tensor(NULL), alpha(1.0), beta(0.0){}
+    ConvParam(int group_in, int pad_h_in, int pad_w_in,
+              int stride_h_in, int stride_w_in, int dilation_h_, int dilation_w_,
+              Tensor<BM, AK_BM, NCHW>* weight, Tensor<BM, AK_BM, NCHW>* bias,
+              float alpha_in = 1.0, float beta_in = 0.0)
+            : group(group_in), pad_h(pad_h_in), pad_w(pad_w_in)
+            , stride_h(stride_h_in), stride_w(stride_w_in)
+            , dilation_h(dilation_h_), dilation_w(dilation_w_)
+            , weight_tensor(weight), bias_tensor(bias)
+            , alpha(alpha_in), beta(beta_in)
+    {}
+    ConvParam(const ConvParam &right)
+            : group(right.group), pad_h(right.pad_h)
+            , pad_w(right.pad_w), stride_h(right.stride_h)
+            , stride_w(right.stride_w), dilation_h(right.dilation_h)
+            , dilation_w(right.dilation_w)
+            , weight_tensor(right.weight_tensor)
+            , bias_tensor(right.bias_tensor)
+            , alpha(right.alpha)
+            , beta(right.beta) {}
+    ConvParam &operator=(const ConvParam &right) {
+        group = right.group;
+        pad_h = right.pad_h;
+        pad_w = right.pad_w;
+        stride_h = right.stride_h;
+        stride_w = right.stride_w;
+        dilation_h = right.dilation_h;
+        dilation_w = right.dilation_w;
+        weight_tensor = right.weight_tensor;
+        bias_tensor = right.bias_tensor;
+        alpha = right.alpha;
+        beta = right.beta;
+        return *this;
+    }
+    bool operator==(const ConvParam &right) {
+        bool comp_eq = true;
+        comp_eq = comp_eq && (group == right.group);
+        comp_eq = comp_eq && (pad_h == right.pad_h);
+        comp_eq = comp_eq && (pad_w == right.pad_w);
+        comp_eq = comp_eq && (stride_h == right.stride_h);
+        comp_eq = comp_eq && (stride_w == right.stride_w);
+        comp_eq = comp_eq && (dilation_h == right.dilation_h);
+        comp_eq = comp_eq && (dilation_w == right.dilation_w);
+        comp_eq = comp_eq && (weight_tensor == right.weight_tensor);
+        comp_eq = comp_eq && (bias_tensor == right.bias_tensor);
+        comp_eq = comp_eq && (alpha == right.alpha);
+        comp_eq = comp_eq && (beta == right.beta);
+        return comp_eq;
+    }
+    inline const Tensor<BM, AK_BM, NCHW>* weight() {
+        return weight_tensor;
+    }
+    inline const Tensor<BM, AK_BM, NCHW>* bias() {
+        return bias_tensor;
+    }
+    inline Tensor<BM, AK_BM, NCHW>* mutable_weight() {
+        return weight_tensor;
+    }
+    inline Tensor<BM, AK_BM, NCHW>* mutable_bias() {
+        return bias_tensor;
+    }
+    int group;
+    int pad_h;
+    int pad_w;
+    int stride_h;
+    int stride_w;
+    int dilation_h;
+    int dilation_w;
+    float alpha;
+    float beta;
+private:
+    Tensor<BM, AK_BM, NCHW>* weight_tensor;
+    Tensor<BM, AK_BM, NCHW>* bias_tensor;
+};
+#endif //USE_BM
+
 template <typename opTensor>
 struct PermuteParam {
     PermuteParam() {}
@@ -704,6 +790,7 @@ struct SoftmaxParam {
     }
     int axis;
 };
+
 template <typename opTensor>
 struct BatchnormParam {
     typedef typename opTensor::Dtype DataDtype;
@@ -748,6 +835,51 @@ struct BatchnormParam {
     std::vector<DataDtype> mean;
     std::vector<DataDtype> variance;
 };
+#ifdef USE_BM
+template <>
+struct BatchnormParam<Tensor<BM, AK_BM, NCHW>> {
+    BatchnormParam()
+        : scale(float(0))
+        , use_global_stats(true)
+        , moving_average_fraction(float(0.999))
+        , eps(float(1e-5))
+        , mean(), variance()
+    {}
+    //scale_factor = 1 / scale;
+    BatchnormParam(std::vector<float> mean_in, std::vector<float> variance_in,
+                float scale_in, float moving_average_fraction_in = float(0.999),
+                float eps_in = float(1e-5), bool use_global_stats_in = true)
+        : mean(mean_in), variance(variance_in), scale(scale_in)
+        , moving_average_fraction(moving_average_fraction_in)
+        , eps(eps_in), use_global_stats(use_global_stats_in)
+    {}
+    BatchnormParam &operator=(const BatchnormParam &right) {
+        scale = right.scale;
+        moving_average_fraction = right.moving_average_fraction;
+        eps = right.eps;
+        use_global_stats = right.use_global_stats;
+        mean = right.mean;
+        variance = right.variance;
+        return *this;
+    }
+    bool operator==(const BatchnormParam &right) {
+        bool comp_eq = true;
+        comp_eq = comp_eq && (scale == right.scale);
+        comp_eq = comp_eq && (moving_average_fraction == right.moving_average_fraction);
+        comp_eq = comp_eq && (eps == right.eps);
+        comp_eq = comp_eq && (use_global_stats == right.use_global_stats);
+        comp_eq = comp_eq && (mean == right.mean);
+        comp_eq = comp_eq && (variance == right.variance);
+        return comp_eq;
+    }
+    float scale;
+    float moving_average_fraction;
+    float eps;
+    bool use_global_stats;
+    std::vector<float> mean;
+    std::vector<float> variance;
+};
+#endif
 
 template <typename opTensor>
 struct PreluParam {
@@ -818,6 +950,29 @@ struct ActivationParam {
     DataDtype coef;
     PreluParam<opTensor> prelu_param;
 };
+
+#ifdef USE_BM
+template <>
+struct ActivationParam<Tensor<BM, AK_BM, NCHW> > {
+    ActivationParam(): active(Active_unknow) {}
+    ActivationParam(ActiveType act): active(act) {}
+    ActivationParam(const ActivationParam &right): active(right.active) {}
+    ActivationParam &operator=(const ActivationParam &right) {
+        active = right.active;
+        return *this;
+    }
+    bool operator==(const ActivationParam &right) {
+        bool comp_eq = true;
+        comp_eq = comp_eq && (active == right.active);
+        return comp_eq;
+    }
+    bool has_negative_slope(){
+        return (active == Active_relu);
+    }
+    ActiveType active;
+};
+#endif
+
 template <typename opTensor>
 struct ScaleParam {
     typedef typename opTensor::Dtype DataDtype;
@@ -862,6 +1017,48 @@ struct ScaleParam {
     std::vector<DataDtype> scale_w;
     std::vector<DataDtype> scale_b;
 };
+#ifdef USE_BM
+template <>
+struct ScaleParam<Tensor<BM, AK_BM, NCHW>> {
+    ScaleParam(): axis(1), num_axes(1), bias_term(false) {}
+    ScaleParam(std::vector<float> scale_w_in, std::vector<float> scale_b_in,
+               bool bias_term_in = true, int axis_in = 1, int num_axes_in = 1)
+            : scale_w(scale_w_in), scale_b(scale_b_in)
+            , bias_term(bias_term_in), axis(axis_in), num_axes(num_axes_in)
+    {}
+    ScaleParam(std::vector<float> scale_w_in,
+               bool bias_term_in = false, int axis_in = 1, int num_axes_in = 1)
+            : scale_w(scale_w_in)
+            , bias_term(bias_term_in), axis(axis_in), num_axes(num_axes_in)
+    {}
+    ScaleParam(const ScaleParam &right)
+            : scale_w(right.scale_w), scale_b(right.scale_b)
+            , bias_term(right.bias_term), axis(right.axis), num_axes(right.num_axes)
+    {}
+    ScaleParam &operator=(const ScaleParam &right) {
+        scale_w = right.scale_w;
+        scale_b = right.scale_b;
+        bias_term = right.bias_term;
+        axis = right.axis;
+        num_axes = right.num_axes;
+        return *this;
+    }
+    bool operator==(const ScaleParam &right) {
+        bool comp_eq = true;
+        /* comp_eq = comp_eq && (scale_w == right.scale_w); */
+        /* comp_eq = comp_eq && (scale_b == right.scale_b); */
+        comp_eq = comp_eq && (bias_term == right.bias_term);
+        comp_eq = comp_eq && (axis == right.axis);
+        comp_eq = comp_eq && (num_axes == right.num_axes);
+        return comp_eq;
+    }
+    int axis; // default is 1
+    int num_axes; // default is 1
+    bool bias_term; // default false
+    std::vector<float> scale_w;
+    std::vector<float> scale_b;
+};
+#endif
 template <typename opTensor>
 struct PoolingParam {
     PoolingParam() : window_h(-1), window_w(-1)
