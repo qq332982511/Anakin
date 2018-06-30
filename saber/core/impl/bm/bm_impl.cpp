@@ -128,6 +128,16 @@ template class Buffer<BM>;
 //! BM Tensor
 INSTANTIATE_TENSOR(BM, AK_BM, NCHW);
 
+const Dtype Tensor<BM, AK_BM, NCHW>::
+data(int index = 0) const {
+    // synchronize the events tree
+    //sync();
+    CHECK_EQ(device_id(), API::get_device_id()) << \
+    "tensor is not declared in current device";
+    return _buf->get_data();
+
+}
+
 template struct Env<BM>;
 
 #endif //USE_BM

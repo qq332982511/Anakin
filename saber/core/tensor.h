@@ -132,33 +132,33 @@ public:
         _is_subbuf = false;
     }
 #ifdef USE_BM
-//    /**
-//     * \brief Constructor with allocated data ptr and entire memory shape. only for BM
-//    */
-//    template <>
-//    Tensor<BM>(Dtype* data_ptr, TargetType_t target, int id, Shape shape) {
-//        CHECK_EQ(shape.dims(), TensorAPI::layout_dims::value) << \
-//            "shape dims is not matched to layout type";
-//        _shape = shape;
-//        _valid_shape = shape;
-//        _offset = Shape::zero(shape.dims());
-//
-//        if(typeid(Dtype) == typeid(AK_FLOAT))
-//        {
-//        std::shared_ptr<Buffer<TargetType_t>> buf_from_date = \
-//            std::make_shared<Buffer<TargetType_t>>(&bm_mem_from_system(const_cast<Dtype *>(data_ptr)), shape.count() * _type_len, id);
-//
-//        BufferMemShare(_buf, buf_from_date);
-//        }
-//        else
-//        {
-//        std::shared_ptr<Buffer<TargetType_t>> buf_from_date = \
-//            std::make_shared<Buffer<TargetType_t>>(data_ptr, shape.count() * _type_len, id);
-//
-//        BufferMemShare(_buf, buf_from_date);
-//        }
-//        _is_subbuf = false;
-//    }
+    /**
+     * \brief Constructor with allocated data ptr and entire memory shape. only for BM
+    */
+    template <>
+    Tensor<BM>(Dtype* data_ptr, TargetType_t target, int id, Shape shape) {
+        CHECK_EQ(shape.dims(), TensorAPI::layout_dims::value) << \
+            "shape dims is not matched to layout type";
+        _shape = shape;
+        _valid_shape = shape;
+        _offset = Shape::zero(shape.dims());
+
+        if(typeid(Dtype) == typeid(AK_FLOAT))
+        {
+        std::shared_ptr<Buffer<TargetType_t>> buf_from_date = \
+            std::make_shared<Buffer<TargetType_t>>(&bm_mem_from_system(const_cast<Dtype *>(data_ptr)), shape.count() * _type_len, id);
+
+        BufferMemShare(_buf, buf_from_date);
+        }
+        else
+        {
+        std::shared_ptr<Buffer<TargetType_t>> buf_from_date = \
+            std::make_shared<Buffer<TargetType_t>>(data_ptr, shape.count() * _type_len, id);
+
+        BufferMemShare(_buf, buf_from_date);
+        }
+        _is_subbuf = false;
+    }
 #endif
     /**
      * \brief Copy constructor, shallow copy.
