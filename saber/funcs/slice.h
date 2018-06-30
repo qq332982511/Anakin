@@ -25,9 +25,15 @@
 #ifdef USE_X86_PLACE
 #include "saber/funcs/impl/impl_slice.h"
 #endif
+
 #ifdef USE_ARM_PLACE
 #include "saber/funcs/impl/arm/saber_slice.h"
 #endif
+
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_slice.h"
+#endif
+
 namespace anakin{
 
 namespace saber{

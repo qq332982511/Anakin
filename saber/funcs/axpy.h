@@ -30,7 +30,11 @@
 //todo
 #include "saber/funcs/impl/impl_axpy.h"
 #endif
-   
+
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_axpy.h"
+#endif
+
 namespace anakin {
 namespace saber {
 

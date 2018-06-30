@@ -31,6 +31,10 @@
 #include "saber/funcs/impl/impl_argmax.h"
 #endif
 
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_argmax.h"
+#endif
+
 namespace anakin {
 namespace saber {
 

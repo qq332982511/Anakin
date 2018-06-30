@@ -29,6 +29,11 @@
 //todo
 #include "saber/funcs/impl/arm/saber_deconv.h"
 #endif
+
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_deconv.h"
+#endif
+
 namespace anakin {
 namespace saber {
 

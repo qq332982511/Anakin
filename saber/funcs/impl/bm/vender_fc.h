@@ -64,7 +64,7 @@ private:
     bm_handle_t _handle;
 };
 
-template class VenderFc<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW, NCHW, NCHW>;
+template class VenderFc<BM, AK_BM, AK_BM, AK_BM, NCHW, NCHW, NCHW>;
 } //namespace saber
 
 } //namespace anakin

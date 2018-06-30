@@ -101,6 +101,8 @@ private:
     bm_handle_t _handle;
 };
 
+template class VenderScale<BM, AK_BM, AK_BM, AK_BM, NCHW, NCHW, NCHW>;
+
 }
 }
 #endif //ANAKIN_SABER_FUNCS_IMPL_BMDNN_SCALE_H

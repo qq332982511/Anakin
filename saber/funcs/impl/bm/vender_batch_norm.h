@@ -88,6 +88,7 @@ public:
 private:
     bm_handle_t _handle;
 };
+    template class VenderBatchNorm<BM, AK_BM, AK_BM, AK_BM, NCHW, NCHW, NCHW>;
 
 } //namespace saber
 

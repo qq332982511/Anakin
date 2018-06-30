@@ -30,7 +30,10 @@
 #ifdef USE_ARM_PLACE
 #include "saber/funcs/impl/arm/saber_fc.h"
 #endif
-   
+
+#ifdef USE_BM
+#include "saber/funcs/impl/bm/vender_fc.h"
+#endif
 namespace anakin{
 
 namespace saber{

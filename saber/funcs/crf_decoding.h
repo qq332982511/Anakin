@@ -34,6 +34,10 @@
 #include "saber/funcs/impl/impl_crf_decoding.h"
 #endif
 
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_crf_decoding.h"
+#endif
+
 namespace anakin {
 namespace saber {
 

@@ -117,7 +117,7 @@ public:
 private:
     bm_handle_t _handle;
 };
-
+    template class VenderConv2D<BM, AK_BM, AK_BM, AK_BM, NCHW, NCHW, NCHW>;
 }
 }
 #endif //ANAKIN_SABER_FUNCS_BMDNN_CONV2D_H

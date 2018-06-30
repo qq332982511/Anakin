@@ -94,10 +94,13 @@ struct DataTrait<Ttype, AK_UINT32> {
     typedef unsigned int dtype;
 };
 
+#ifdef USE_BM
 template <>
-struct DataTrait<AK_BM> {
-    typedef bm_device_mem_t dtype;
+struct DataTrait<BM,AK_BM> {
+    typedef bm_device_mem_t Dtype;
+    typedef float dtype;
 };
+#endif
 
 #ifdef USE_OPENCL
 struct ClMem{

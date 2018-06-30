@@ -32,6 +32,10 @@
 #include "saber/funcs/impl/arm/saber_conv_act_pooling.h"
 #endif
 
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_conv_act_pooling.h"
+#endif
+
 namespace anakin {
 namespace saber {
 

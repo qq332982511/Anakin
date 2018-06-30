@@ -25,10 +25,17 @@
 #ifdef USE_X86_PLACE
 #include "saber/funcs/impl/impl_lrn.h"
 #endif
+
 #ifdef USE_ARM_PLACE
 //todo
 #include "saber/funcs/impl/impl_lrn.h"
 #endif
+
+#ifdef USE_BM
+//todo
+#include "saber/funcs/impl/impl_lrn.h"
+#endif
+
 namespace anakin {
 namespace saber {
 

@@ -31,6 +31,10 @@
 //todo
 #include "saber/funcs/impl/impl_gru.h"
 #endif
+
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_gru.h"
+#endif
 namespace anakin {
 namespace saber {
 
