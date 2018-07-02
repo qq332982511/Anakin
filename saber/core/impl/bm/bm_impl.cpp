@@ -128,15 +128,97 @@ template class Buffer<BM>;
 //! BM Tensor
 INSTANTIATE_TENSOR(BM, AK_BM, NCHW);
 
-const Dtype Tensor<BM, AK_BM, NCHW>::
-data(int index = 0) const {
-    // synchronize the events tree
-    //sync();
-    CHECK_EQ(device_id(), API::get_device_id()) << \
-    "tensor is not declared in current device";
-    return _buf->get_data();
+#ifdef USE_BM
+/**
+ * \brief Constructor with allocated data ptr and entire memory shape. only for BM
+*/
+template <>
+Tensor<BM,AK_BM, NCHW>::Tensor(Dtype_p data_ptr, TargetType_t target, int id, Shape shape) {
+    CHECK_EQ(shape.dims(), TensorAPI::layout_dims::value) << \
+        "shape dims is not matched to layout type";
+    _shape = shape;
+    _valid_shape = shape;
+    _offset = Shape::zero(shape.dims());
 
+    std::shared_ptr<Buffer<TargetType_t>> buf_from_date = \
+        std::make_shared<Buffer<TargetType_t>>(&bm_mem_from_system(const_cast<Dtype_p>(data_ptr)), shape.count() * _type_len, id);
+
+    BufferMemShare(_buf, buf_from_date);
+
+    _is_subbuf = false;
 }
+#endif
+
+#ifdef USE_BM
+
+#ifndef BM_TENSOR_COPY
+#define BM_TENSOR_COPY
+
+template<>
+template<> inline
+SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<X86, AK_FLOAT, NCHW>(const Tensor<X86, AK_FLOAT, NCHW>& tensor) {
+            LOG(INFO) << "BM copy_from X86";
+            CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+    auto* device_data_ptr = mutable_data();
+    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(const_cast<float *>(tensor.data()))));
+    return SaberSuccess;
+}
+
+template<>
+template<> inline
+SaberStatus Tensor<X86, AK_FLOAT, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
+            LOG(INFO) << "X86 copy_from BM";
+            CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+    auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
+    BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
+    return SaberSuccess;
+}
+
+/*
+
+
+    template<>
+    template<> inline
+    SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<X86, AK_FLOAT, NCHW>(const Tensor<X86, AK_FLOAT, NCHW>& tensor) {
+        LOG(INFO) << "BM copy_from X86";
+        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+        auto* device_data_ptr = mutable_data();
+        BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(const_cast<float *>(tensor.data()))));
+        //BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *(bm_device_mem_t *)(mutable_data()), bm_mem_from_system(tensor.data())));
+        return SaberSuccess;
+    }
+
+    template<>
+    template<> inline
+    SaberStatus Tensor<X86, AK_FLOAT, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
+        LOG(INFO) << "X86 copy_from BM";
+        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+        auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
+        BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
+        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *(bm_device_mem_t *)(tensor.data())));
+        return SaberSuccess;
+    }
+
+    template<>
+    template<> inline
+    SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
+        LOG(INFO) << "BM copy_from BM";
+        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
+
+        auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
+        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
+        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *(bm_device_mem_t *)(tensor.data())));
+        return SaberSuccess;
+    }
+*/
+
+#endif
+
+#endif
 
 template struct Env<BM>;
 
