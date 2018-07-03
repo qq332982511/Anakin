@@ -128,6 +128,18 @@ template class Buffer<BM>;
 //! BM Tensor
 INSTANTIATE_TENSOR(BM, AK_BM, NCHW);
 
+template <>
+Tensor<BM,AK_BM, NCHW>::mutable_data(int index = 0) {
+    // synchronize the events tree
+    //sync();
+            CHECK_EQ(device_id(), API::get_device_id()) << \
+            "tensor is not declared in current device";
+    if (_buf->get_capacity() == 0){
+        return nullptr;
+    }
+    return static_cast<Dtype_p>(_buf->get_data_mutable()) + start_index() + index;
+}
+
 #ifdef USE_BM
 /**
  * \brief Constructor with allocated data ptr and entire memory shape. only for BM

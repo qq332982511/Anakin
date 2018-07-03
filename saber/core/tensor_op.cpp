@@ -374,8 +374,8 @@ void fill_tensor_device_rand<Tensor<BM, AK_BM, NCHW>>(Tensor<BM, AK_BM, NCHW>& t
         host_mem_input[i] = static_cast<float>(rand());
     }
 
-    bm_device_mem_t* device_data_ptr = tensor.mutable_data();
-    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(host_mem_input)));
+    bm_device_mem_t device_data_ptr = tensor.mutable_data().inner_desc;
+    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), device_data_ptr, bm_mem_from_system(host_mem_input)));
 
     delete [] host_mem_input;
 }
@@ -393,8 +393,8 @@ void fill_tensor_device_rand(Tensor<BM, AK_BM, NCHW>& tensor, float vstart, \
         host_mem_input[i] = random_num;
     }
 
-    bm_device_mem_t* device_data_ptr = tensor.mutable_data();
-    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(host_mem_input)));
+    bm_device_mem_t device_data_ptr = tensor.mutable_data().inner_desc;
+    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), device_data_ptr, bm_mem_from_system(host_mem_input)));
 
     delete [] host_mem_input;
 }
@@ -407,8 +407,8 @@ void fill_tensor_device_const(Tensor<BM, AK_BM, NCHW>& tensor, float value, \
         host_mem_input[i] = value;
     }
 
-    bm_device_mem_t* device_data_ptr = tensor.mutable_data();
-    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(host_mem_input)));
+    bm_device_mem_t device_data_ptr = tensor.mutable_data().inner_desc;
+    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), device_data_ptr, bm_mem_from_system(host_mem_input)));
 
     delete [] host_mem_input;
 }
@@ -434,8 +434,8 @@ void print_tensor_device<Tensor<BM, AK_BM, NCHW>>(Tensor<BM, AK_BM, NCHW>& tenso
     }*/
 
     float *host_mem = new float[tensor.size()];
-    auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
-    bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(host_mem), *device_data_ptr);
+    auto device_data_ptr = (tensor.data().inner_desc);
+    bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(host_mem), device_data_ptr);
 
     for (int i = 0; i < tensor.size(); ++i) {
         printf("%.2f\t", host_mem[i]);
