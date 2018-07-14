@@ -47,7 +47,7 @@ void print_vector_data(std::vector<float>& vec) {
 void test_scale(int n, int c, int h, int w, int axis, int num_axes, bool bias_term, int scale_dim) {
 
     typedef Tensor<X86, AK_FLOAT, NCHW> TensorHf4;
-    typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+    typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 
     int img_num = n;
     int in_channels = c;
@@ -86,7 +86,7 @@ void test_scale(int n, int c, int h, int w, int axis, int num_axes, bool bias_te
     input.push_back(&img_dev);
     output.push_back(&output_dev);
 
-    Scale<BM, AK_BM, AK_BM, AK_BM, NCHW> scale;
+    Scale<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> scale;
     scale.compute_output_shape(input, output, param);
     output_dev.re_alloc(output[0]->valid_shape());
 

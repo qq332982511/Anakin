@@ -27,6 +27,9 @@ using Target_H = X86;
 #elif defined(USE_ARM_PLACE)
 using Target = ARM;
 using Target_H = ARM;
+#elif defined(USE_BM)
+using Target = BM;
+using Target_H = X86;
 #endif
 
 //#define WITH_MENTION

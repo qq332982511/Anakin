@@ -25,9 +25,14 @@
 #ifdef USE_X86_PLACE
 #include "saber/funcs/impl/x86/saber_eltwise_act.h"
 #endif
+
 #ifdef USE_ARM_PLACE
 //todo
 #include "saber/funcs/impl/arm/saber_eltwise_active.h"
+#endif
+
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_eltwise_act.h"
 #endif
 
 namespace anakin {

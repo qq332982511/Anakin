@@ -92,29 +92,30 @@ Status GruHelper<Ttype, Dtype, Ptype>::InferShape(const std::vector<Tensor4dPtr<
 template class GruHelper<NV, AK_FLOAT, Precision::FP32>;
 template class GruHelper<NV, AK_FLOAT, Precision::FP16>;
 template class GruHelper<NV, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Gru, GruHelper, NV, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_ARM_PLACE
 template class GruHelper<ARM, AK_FLOAT, Precision::FP32>;
 template class GruHelper<ARM, AK_FLOAT, Precision::FP16>;
 template class GruHelper<ARM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Gru, GruHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_X86_PLACE
 template class GruHelper<X86, AK_FLOAT, Precision::FP32>;
 template class GruHelper<X86, AK_FLOAT, Precision::FP16>;
 template class GruHelper<X86, AK_FLOAT, Precision::INT8>;
-#endif
-
-#ifdef USE_CUDA
-ANAKIN_REGISTER_OP_HELPER(Gru, GruHelper, NV, AK_FLOAT, Precision::FP32);
-#endif
-#ifdef USE_ARM_PLACE
-ANAKIN_REGISTER_OP_HELPER(Gru, GruHelper, ARM, AK_FLOAT, Precision::FP32);
-#endif
-#ifdef USE_X86_PLACE
 ANAKIN_REGISTER_OP_HELPER(Gru, GruHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
+
+#ifdef USE_BM
+template class GruHelper<BM, AK_FLOAT, Precision::FP32>;
+template class GruHelper<BM, AK_FLOAT, Precision::FP16>;
+template class GruHelper<BM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Gru, GruHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Gru)
     .Doc("Gru operator")
@@ -126,6 +127,9 @@ ANAKIN_REGISTER_OP(Gru)
 #endif
 #ifdef USE_X86_PLACE
     .__alias__<X86, AK_FLOAT, Precision::FP32>("gru")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("gru")
 #endif
     .num_in(1)
     .num_out(1)

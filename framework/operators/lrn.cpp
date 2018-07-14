@@ -68,20 +68,21 @@ Status LrnHelper<Ttype, Dtype, Ptype>::InferShape(const std::vector<Tensor4dPtr<
 template class LrnHelper<NV, AK_FLOAT, Precision::FP32>;
 template class LrnHelper<NV, AK_FLOAT, Precision::FP16>;
 template class LrnHelper<NV, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Lrn, LrnHelper, NV, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_ARM_PLACE
 template class LrnHelper<ARM, AK_FLOAT, Precision::FP32>;
 template class LrnHelper<ARM, AK_FLOAT, Precision::FP16>;
 template class LrnHelper<ARM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Lrn, LrnHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
-// register helper
-#ifdef USE_CUDA
-ANAKIN_REGISTER_OP_HELPER(Lrn, LrnHelper, NV, AK_FLOAT, Precision::FP32);
-#endif
-#ifdef USE_ARM_PLACE
-ANAKIN_REGISTER_OP_HELPER(Lrn, LrnHelper, ARM, AK_FLOAT, Precision::FP32);
+#ifdef USE_BM
+template class LrnHelper<BM, AK_FLOAT, Precision::FP32>;
+template class LrnHelper<BM, AK_FLOAT, Precision::FP16>;
+template class LrnHelper<BM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Lrn, LrnHelper, BM, AK_FLOAT, Precision::FP32);
 #endif
 
 //! register op
@@ -92,6 +93,9 @@ ANAKIN_REGISTER_OP(Lrn)
 #endif
 #ifdef USE_ARM_PLACE
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("LRN")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("LRN")
 #endif
 .num_in(3)
 .num_out(1);

@@ -79,6 +79,12 @@ template class DetectionOutputHelper<ARM, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(DetectionOutput, DetectionOutputHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_DETECTIONOUTPUT(BM, AK_FLOAT, Precision::FP32);
+template class DetectionOutputHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(DetectionOutput, DetectionOutputHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(DetectionOutput)
 .Doc("DetectionOutput operator")
@@ -90,6 +96,9 @@ ANAKIN_REGISTER_OP(DetectionOutput)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("detectionoutput")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("detectionoutput")
 #endif
 .num_in(1)
 .num_out(1)

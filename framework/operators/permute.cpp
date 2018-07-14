@@ -63,6 +63,12 @@ template class PermuteHelper<ARM, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Permute, PermuteHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_PERMUTE(BM, AK_FLOAT, Precision::FP32);
+template class PermuteHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Permute, PermuteHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Permute)
 .Doc("Permute operator")
@@ -74,6 +80,9 @@ ANAKIN_REGISTER_OP(Permute)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("permute")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("permute")
 #endif
 .num_in(1)
 .num_out(1)

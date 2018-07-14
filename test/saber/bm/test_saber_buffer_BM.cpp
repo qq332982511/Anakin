@@ -13,8 +13,9 @@ void test_buffer() {
 
     typedef TargetWrapper<X86> X86_API;
     typedef TargetWrapper<BM> BM_API;
-    typedef typename DataTrait<Ddatatype>::dtype Ddtype;
-    typedef typename DataTrait<Hdatatype>::dtype Hdtype;
+    typedef typename DataTrait<BM,Ddatatype>::Dtype Ddtype;
+    typedef typename DataTrait<BM,Ddatatype>::PtrDtype Ddtype_ptr;
+    typedef typename DataTrait<X86,Hdatatype>::Dtype Hdtype;
     typedef Buffer<X86> BufferH;
     typedef Buffer<BM> BufferD;
 
@@ -30,10 +31,10 @@ void test_buffer() {
         x86_ptr[i] = static_cast<Hdtype>(i);
     }
 
-    void* tmp_bm;
-    Ddtype* bm_ptr;
+    Ddtype_ptr tmp_bm;
+    Ddtype_ptr bm_ptr;
     BM_API::mem_alloc(&tmp_bm, get_bm_size() * n0);
-    bm_ptr = static_cast<Ddtype*>(tmp_bm);
+    bm_ptr = static_cast<Ddtype_ptr>(tmp_bm);
 
     LOG(INFO) << "Buffer: test default(empty) constructor";
     BufferH x86_buf0;
@@ -118,7 +119,7 @@ void test_buffer() {
 }
 
 TEST(TestSaberBufferBM, test_buffer_memcpy) {
-    test_buffer<AK_BM, AK_FLOAT>();
+    test_buffer<AK_FLOAT, AK_FLOAT>();
 }
 
 int main(int argc, const char** argv) {

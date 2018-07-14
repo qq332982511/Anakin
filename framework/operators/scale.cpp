@@ -72,6 +72,12 @@ template class ScaleHelper<ARM, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Scale, ScaleHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif//arm
 
+#ifdef USE_BM
+INSTANCE_SCALE(BM, AK_FLOAT, Precision::FP32);
+template class ScaleHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Scale, ScaleHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Scale)
 .Doc("Scale operator")
@@ -83,6 +89,9 @@ ANAKIN_REGISTER_OP(Scale)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("Scale")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("Scale")
 #endif
 .num_in(1)
 .num_out(1)

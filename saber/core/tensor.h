@@ -61,9 +61,9 @@ template<typename TargetType, DataType datatype, typename LayOutType = NCHW>
 class Tensor : public TensorBase {
 public:
     typedef TargetType targetType_t;
-    typedef typename DataTrait<TargetType, datatype>::Dtype_p Dtype_p;
     typedef typename DataTrait<TargetType, datatype>::Dtype Dtype;
-    typedef typename DataTrait<TargetType, datatype>::dtype dtype;
+    typedef typename DataTrait<TargetType, datatype>::PtrDtype PtrDtype;
+    typedef typename PtrTrait<TargetType>::PtrType PtrType;
     typedef typename TargetTypeTraits<TargetType>::target_category target_category;
     typedef typename TargetTypeTraits<TargetType>::target_type target_type;
     typedef TargetWrapper<TargetType> API;
@@ -120,7 +120,7 @@ public:
      * \brief Constructor with allocated data ptr and entire memory shape.
      */
     template <typename TargetType_t>
-    Tensor(Dtype_p data_ptr, TargetType_t target, int id, Shape shape) {
+    Tensor(Dtype* data_ptr, TargetType_t target, int id, Shape shape) {
 
         CHECK_EQ(shape.dims(), TensorAPI::layout_dims::value) << \
             "shape dims is not matched to layout type";
@@ -488,9 +488,9 @@ public:
     }
 
     /**
-     *  \brief Return tensor mutable data pointer, with data type of current tensor (Dtype_p).
+     *  \brief Return tensor mutable data pointer, with data type of current tensor (PtrType).
      */
-    Dtype_p mutable_data(int index = 0) {
+    PtrDtype mutable_data(int index = 0) {
         // synchronize the events tree
         //sync();
         CHECK_EQ(device_id(), API::get_device_id()) << \
@@ -498,13 +498,13 @@ public:
         if (_buf->get_capacity() == 0){
             return nullptr;
         }
-        return static_cast<Dtype_p>(_buf->get_data_mutable()) + start_index() + index;
+        return static_cast<PtrDtype>(_buf->get_data_mutable()) + start_index() + index;
     }
 
     /**
-     *  \brief Return tensor data pointer, with data type of current tensor (Dtype_p).
+     *  \brief Return tensor data pointer, with data type of current tensor (PtrType).
      */
-    const Dtype_p data(int index = 0) const {
+    const PtrDtype data(int index = 0) const {
         // synchronize the events tree
         //sync();
         CHECK_EQ(device_id(), API::get_device_id()) << \
@@ -512,7 +512,7 @@ public:
         if (_buf->get_capacity() == 0){
             return nullptr;
         }
-        return static_cast<const Dtype_p>(_buf->get_data()) + start_index() + index;
+        return static_cast<const PtrDtype>(_buf->get_data()) + start_index() + index;
     }
 
     /**
@@ -592,14 +592,14 @@ public:
         typedef typename IF<std::is_same<target_category , __host_target>::value, API_t, API>::Type process_API;
 
         /// return if src and dst data ptrs are the same
-        if (data() == tensor.data()){
-            return SaberSuccess;
-        }
+//        if (data() == tensor.data()){
+//            return SaberSuccess;
+//        }
 
         /// both tensors are continuous, copy entire buffer
         if (is_continue_mem() && tensor.is_continue_mem()) {
-            Dtype_p ptr_dst = mutable_data();
-            const Dtype_p ptr_src = tensor.data();
+            PtrDtype ptr_dst = mutable_data();
+            const  typename Tensor<TargetType_t, datatype, LayOutType_t>::PtrDtype ptr_src = tensor.data();
             process_API::sync_memcpy(ptr_dst, device_id(), ptr_src, tensor.device_id(), \
                 _type_len * valid_size(), flag_type());
             return SaberSuccess;
@@ -695,8 +695,9 @@ public:
         int ratio_dst = cpy_len_dst / cpy_len;
         int ratio_src = cpy_len_src / cpy_len;
 
-        Dtype_p dst = mutable_data();
-        const Dtype_p src = tensor.data();
+        typedef typename Tensor<TargetType_t, datatype, LayOutType_t>::PtrDtype Src_PtrDtype;
+        PtrType dst = mutable_data();
+        const Src_PtrDtype src = tensor.data();
 
         for (int i = 0; i < cpy_num; ++i) {
             int idx_dst = (i % ratio_dst) * cpy_len;//off_dst[abs(axis_discontinue_dst)] * \
@@ -716,8 +717,8 @@ public:
                 res_src = res_src % count_src[j];
             }
             //printf("i: %d, idx_src: %d, idx_dst: %d\n", i, idx_src, idx_dst);
-            Dtype_p ptr_dst = dst + idx_dst;//_buf->get_data_mutable() + idx_dst;
-            const Dtype_p ptr_src = src + idx_src;//tensor.get_buf()->get_data() + idx_src;
+            PtrType ptr_dst = dst + idx_dst;//_buf->get_data_mutable() + idx_dst;
+            const Src_PtrDtype ptr_src = src + idx_src;//tensor.get_buf()->get_data() + idx_src;
             process_API::sync_memcpy(ptr_dst, device_id(), ptr_src, tensor.device_id(), \
                 _type_len * cpy_len, flag_type());
         }
@@ -725,11 +726,11 @@ public:
     }
 
 #ifdef USE_BM
-    template <typename NewTargetType_t, DataType NewDataType_t, typename NewLayOutType_t>
-    SaberStatus copy_from(const Tensor<NewTargetType_t, NewDataType_t, NewLayOutType_t>& tensor) {
-        LOG(WARNING) << "Invalid: copy_from is not allowed for current type.";
-        return SaberInvalidValue;
-    }
+//    template <typename NewTargetType_t, DataType NewDataType_t, typename NewLayOutType_t>
+//    SaberStatus copy_from(const Tensor<NewTargetType_t, NewDataType_t, NewLayOutType_t>& tensor) {
+//        LOG(WARNING) << "Invalid: copy_from is not allowed for current type.";
+//        return SaberInvalidValue;
+//    }
 
 #endif
 
@@ -759,8 +760,8 @@ public:
 
         /// both tensors are continuous, copy entire buffer
         if (is_continue_mem() && tensor.is_continue_mem()) {
-            Dtype_p ptr_dst = mutable_data();
-            const Dtype_p ptr_src = tensor.data();
+            PtrType ptr_dst = mutable_data();
+            const PtrType ptr_src = tensor.data();
             process_API::async_memcpy(ptr_dst, device_id(), ptr_src, tensor.device_id(), \
                 _type_len * valid_size(), stream, flag_type());
             return SaberSuccess;
@@ -856,8 +857,9 @@ public:
         int ratio_dst = cpy_len_dst / cpy_len;
         int ratio_src = cpy_len_src / cpy_len;
 
-        Dtype_p dst = mutable_data();
-        const Dtype_p src = tensor.data();
+        typedef typename Tensor<TargetType_t, datatype, LayOutType_t>::PtrDtype Src_PtrDtype;
+        PtrType dst = mutable_data();
+        const Src_PtrDtype src = tensor.data();
 
         for (int i = 0; i < cpy_num; ++i) {
             int idx_dst = (i % ratio_dst) * cpy_len;//off_dst[abs(axis_discontinue_dst)] * \
@@ -877,8 +879,8 @@ public:
                 res_src = res_src % count_src[j];
             }
             //printf("i: %d, idx_src: %d, idx_dst: %d\n", i, idx_src, idx_dst);
-            Dtype_p ptr_dst = dst + idx_dst;//_buf->get_data_mutable() + idx_dst;
-            const Dtype_p ptr_src = src + idx_src;//tensor.get_buf()->get_data() + idx_src;
+            PtrType ptr_dst = dst + idx_dst;//_buf->get_data_mutable() + idx_dst;
+            const Src_PtrDtype ptr_src = src + idx_src;//tensor.get_buf()->get_data() + idx_src;
             process_API::async_memcpy(ptr_dst, device_id(), ptr_src, tensor.device_id(), \
                 _type_len * cpy_len, stream, flag_type());
         }
@@ -910,7 +912,7 @@ public:
 
 private:
     ///< Length of datatype.
-    size_t _type_len{sizeof(dtype)};
+    size_t _type_len{sizeof(Dtype)};
 
     ///< Represent the raw mem shape.
     Shape _shape;

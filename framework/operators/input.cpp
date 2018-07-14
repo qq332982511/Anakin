@@ -62,6 +62,12 @@ template class InputHelper<X86, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Input, InputHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_INPUT(BM, AK_FLOAT, Precision::FP32);
+template class InputHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Input, InputHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Input)
 .Doc("Input operator [ only a input data holder and reshape ] ")
@@ -73,6 +79,9 @@ ANAKIN_REGISTER_OP(Input)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("input")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("input")
 #endif
 .Args<PTuple<int>>("input_shape", " shape of graph input.");
 

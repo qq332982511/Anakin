@@ -5,8 +5,10 @@
 using Target = NV;
 #elif defined(USE_X86_PLACE)
 using Target = X86;
-#else
+#elif defined(USE_ARM_PLACE)
 using Target = ARM;
+#elif defined(USE_BM)
+using Target = BM;
 #endif
 
 TEST(OperatorsTest, PoolingFactoryTest) {

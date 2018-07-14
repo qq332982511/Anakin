@@ -84,6 +84,12 @@ template class SliceHelper<ARM, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Slice, SliceHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_SLICE(BM, AK_FLOAT, Precision::FP32);
+template class SliceHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Slice, SliceHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Slice)
 .Doc("Slice operator")
@@ -92,6 +98,9 @@ ANAKIN_REGISTER_OP(Slice)
 #endif
 #ifdef USE_ARM_PLACE
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("slice")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("slice")
 #endif
 .num_in(1)
 .num_out(1)

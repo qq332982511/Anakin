@@ -8,7 +8,7 @@
 using namespace anakin::saber;
 
 typedef Tensor<X86, AK_FLOAT, NCHW> TensorHf4;
-typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 
 template <typename Tensor>
 void print_tensor_shape(std::string name, Tensor &t0) {
@@ -129,7 +129,7 @@ TEST(TestSaberFuncBM, test_conv_result) {
     input.push_back(&img_dev);
     output.push_back(&output_dev);
 
-    Conv<BM, AK_BM, AK_BM, AK_BM, NCHW> conv;
+    Conv<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> conv;
     conv.compute_output_shape(input, output, param);
 
     output_dev.re_alloc(output[0]->shape());
@@ -221,7 +221,7 @@ TEST(TestSaberFuncBM, test_conv_param_change) {
     input.push_back(&img_dev);
     output.push_back(&output_dev);
 
-    Conv<BM, AK_BM, AK_BM, AK_BM, NCHW> conv;
+    Conv<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> conv;
     conv.compute_output_shape(input, output, param);
 
     output_dev.re_alloc(output[0]->shape());
@@ -355,8 +355,8 @@ TEST(TestSaberFuncBM, test_conv_share_sub_tensor) {
 
     output_dev.re_alloc(img_s);
 
-    Conv<BM, AK_BM, AK_BM, AK_BM, NCHW> conv0;
-    Conv<BM, AK_BM, AK_BM, AK_BM, NCHW> conv1;
+    Conv<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> conv0;
+    Conv<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> conv1;
 
     conv0.compute_output_shape(input0, output0, param0);
     conv1.compute_output_shape(input1, output1, param1);
@@ -456,7 +456,7 @@ TEST(TestSaberFuncBM, test_conv_fp32_speed_test) {
     input.push_back(&img_dev);
     output.push_back(&output_dev);
 
-    Conv<BM, AK_BM, AK_BM, AK_BM, NCHW> conv;
+    Conv<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> conv;
     conv.compute_output_shape(input, output, param);
 
     output_dev.re_alloc(output[0]->shape());
@@ -523,7 +523,7 @@ TEST(TestSaberFuncBM, test_conv_fp32_1x1_speed) {
                                     stride, stride,
                                     1, 1,
                                     &weights, &bias);
-    Conv<BM, AK_BM, AK_BM, AK_BM, NCHW> conv;
+    Conv<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> conv;
     conv.compute_output_shape(input, output, conv_param);
     out.re_alloc(output[0]->shape());
     Context<BM> ctx1(0, 1, 1);

@@ -82,6 +82,11 @@ template class PriorBoxHelper<X86, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(PriorBox, PriorBoxHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_PRIORBOX(BM, AK_FLOAT, Precision::FP32);
+template class PriorBoxHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(PriorBox, PriorBoxHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
 //! register op
 ANAKIN_REGISTER_OP(PriorBox)
 .Doc("PriorBox operator")
@@ -93,6 +98,9 @@ ANAKIN_REGISTER_OP(PriorBox)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("priorbox")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("priorbox")
 #endif
 .num_in(1)
 .num_out(1)

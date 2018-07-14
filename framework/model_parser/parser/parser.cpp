@@ -376,10 +376,54 @@ template
 Status save<ARM, AK_FLOAT, Precision::INT8>(graph::Graph<ARM, AK_FLOAT, Precision::INT8>* graph,
                                                     const char* model_path);
 #endif
-
 #endif
 
+#ifdef USE_BM
+#ifdef ANAKIN_TYPE_FP32
+template
+Status load<BM, AK_FLOAT, Precision::FP32>(graph::Graph<BM, AK_FLOAT, Precision::FP32>* graph,
+                                                    const char* model_path);
+template
+Status save<BM, AK_FLOAT, Precision::FP32>(graph::Graph<BM, AK_FLOAT, Precision::FP32>* graph,
+                                                    std::string& model_path);
+template
+Status load<BM, AK_FLOAT, Precision::FP32>(graph::Graph<BM, AK_FLOAT, Precision::FP32>* graph,
+                                                    std::string& model_path);
+template
+Status save<BM, AK_FLOAT, Precision::FP32>(graph::Graph<BM, AK_FLOAT, Precision::FP32>* graph,
+                                                    const char* model_path);
+#endif
 
+#ifdef ANAKIN_TYPE_FP16
+template
+Status load<BM, AK_FLOAT, Precision::FP16>(graph::Graph<BM, AK_FLOAT, Precision::FP16>* graph,
+                                                    const char* model_path);
+template
+Status save<BM, AK_FLOAT, Precision::FP16>(graph::Graph<BM, AK_FLOAT, Precision::FP16>* graph,
+                                                    std::string& model_path);
+template
+Status load<BM, AK_FLOAT, Precision::FP16>(graph::Graph<BM, AK_FLOAT, Precision::FP16>* graph,
+                                                    std::string& model_path);
+template
+Status save<BM, AK_FLOAT, Precision::FP16>(graph::Graph<BM, AK_FLOAT, Precision::FP16>* graph,
+                                                    const char* model_path);
+#endif
+
+#ifdef ANAKIN_TYPE_INT8
+template
+Status load<BM, AK_FLOAT, Precision::INT8>(graph::Graph<BM, AK_FLOAT, Precision::INT8>* graph,
+                                                    const char* model_path);
+template
+Status save<BM, AK_FLOAT, Precision::INT8>(graph::Graph<BM, AK_FLOAT, Precision::INT8>* graph,
+                                                    std::string& model_path);
+template
+Status load<BM, AK_FLOAT, Precision::INT8>(graph::Graph<BM, AK_FLOAT, Precision::INT8>* graph,
+                                                    std::string& model_path);
+template
+Status save<BM, AK_FLOAT, Precision::INT8>(graph::Graph<BM, AK_FLOAT, Precision::INT8>* graph,
+                                                    const char* model_path);
+#endif
+#endif
 
 
 } /* parser */

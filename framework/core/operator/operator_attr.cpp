@@ -51,6 +51,15 @@ OpAttrWarpper& OpAttrWarpper::__alias__<ARM, AK_FLOAT, Precision::INT8>(const st
 
 //#endif
 
+//#ifdef USE_BM
+template
+OpAttrWarpper& OpAttrWarpper::__alias__<BM, AK_FLOAT, Precision::FP32>(const std::string& op_name);
+template
+OpAttrWarpper& OpAttrWarpper::__alias__<BM, AK_FLOAT, Precision::FP16>(const std::string& op_name);
+template
+OpAttrWarpper& OpAttrWarpper::__alias__<BM, AK_FLOAT, Precision::INT8>(const std::string& op_name);
+//#endif
+
 OpAttrWarpper& OpAttrWarpper::Doc(const std::string& doc) {
     opAttr_.doc = doc;
     return *this;

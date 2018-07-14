@@ -93,6 +93,24 @@ template class AxpyHelper<ARM, AK_FLOAT, Precision::INT8>;
 
 #endif//arm
 
+#ifdef USE_BM
+
+#ifdef ANAKIN_TYPE_FP32
+INSTANCE_AXPY(BM, AK_FLOAT, Precision::FP32);
+template class AxpyHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Axpy, AxpyHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
+#ifdef ANAKIN_TYPE_FP16
+template class AxpyHelper<BM, AK_FLOAT, Precision::FP16>;
+#endif
+
+#ifdef ANAKIN_TYPE_INT8
+template class AxpyHelper<BM, AK_FLOAT, Precision::INT8>;
+#endif
+
+#endif//arm
+
 //! register op
 ANAKIN_REGISTER_OP(Axpy)
 .Doc("Axpy operator")
@@ -104,6 +122,9 @@ ANAKIN_REGISTER_OP(Axpy)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("axpy")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("axpy")
 #endif
 .num_in(3)
 .num_out(1);

@@ -25,9 +25,9 @@ public:
     typedef Tensor<BM, inDtype, LayOutType_in> DataTensor_in;
     typedef Tensor<BM, outDtype, LayOutType_out> DataTensor_out;
     typedef Tensor<BM, OpDtype, LayOutType_op> OpTensor;
-    typedef typename DataTensor_in::Dtype InDataType;
-    typedef typename DataTensor_out::Dtype OutDataType;
-    typedef typename OpTensor::Dtype OpDataType;
+    typedef typename DataTensor_in::PtrDtype InDataType;
+    typedef typename DataTensor_out::PtrDtype OutDataType;
+    typedef typename OpTensor::PtrDtype OpDataType;
 
     VenderConv2D(): _handle(NULL) {}
     ~VenderConv2D() {}
@@ -49,9 +49,9 @@ public:
     virtual SaberStatus dispatch(const std::vector<DataTensor_in*>& inputs,
                           std::vector<DataTensor_out*>& outputs,
                           ConvParam<OpTensor>& param) {
-        const InDataType *in_data = (const InDataType *) inputs[0]->data();
-        const InDataType *weight = (const InDataType *) param.weight()->data();
-        OutDataType *out_data = (OutDataType *) outputs[0]->mutable_data();
+        const InDataType in_data =  inputs[0]->data();
+        const InDataType weight =  param.weight()->data();
+        OutDataType out_data =  outputs[0]->mutable_data();
 
         int input_n = inputs[0]->num();
         int input_c = inputs[0]->channel();
@@ -74,7 +74,7 @@ public:
         int dilation_w = param.dilation_w;
 
         bool with_bias = param.bias()->size() > 0;
-        const InDataType *bias = with_bias? (const InDataType *) param.bias()->data() : &bm_mem_null();
+        const InDataType bias = with_bias==true ? param.bias()->data() : static_cast<InDataType>(bm_mem_null());
 
         bm_tensor_4d_t input_shape = {
             input_n,
@@ -108,8 +108,8 @@ public:
             0
         };
 
-        BMDNN_CHECK(bmdnn_conv_forward(_handle, *in_data, *weight, *bias, input_shape, 
-                                    kernel_param, output_shape, conv_param, with_bias, *out_data));
+        BMDNN_CHECK(bmdnn_conv_forward(_handle, in_data, weight, bias, input_shape,
+                                    kernel_param, output_shape, conv_param, with_bias, out_data));
                                     
         return SaberSuccess;
     }
@@ -117,7 +117,7 @@ public:
 private:
     bm_handle_t _handle;
 };
-    template class VenderConv2D<BM, AK_BM, AK_BM, AK_BM, NCHW, NCHW, NCHW>;
+    template class VenderConv2D<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW, NCHW, NCHW>;
 }
 }
 #endif //ANAKIN_SABER_FUNCS_BMDNN_CONV2D_H

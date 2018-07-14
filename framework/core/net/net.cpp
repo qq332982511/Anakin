@@ -14,7 +14,7 @@ Net<Ttype, Dtype, Ptype, RunType>::~Net() {
 template<typename Ttype, DataType Dtype>
 double tensor_average(Tensor4dPtr<Ttype, Dtype>& out_tensor_p) {
     double sum = 0.0f;
-    typedef typename DataTrait<Ttype, Dtype>::dtype dtype;
+    typedef typename DataTrait<Ttype, Dtype>::Dtype dtype;
     const dtype* hptr = nullptr;
 
     Shape shin = out_tensor_p->valid_shape();
@@ -666,8 +666,30 @@ template class Net<ARM, AK_FLOAT, Precision::FP16, OpRunType::SYNC>;
 template class Net<ARM, AK_FLOAT, Precision::INT8, OpRunType::ASYNC>;
 template class Net<ARM, AK_FLOAT, Precision::INT8, OpRunType::SYNC>;
 #endif //int8
-
 #endif //arm
+
+#ifdef USE_BM
+
+#ifdef ANAKIN_TYPE_FP32
+
+
+
+
+template class Net<BM, AK_FLOAT, Precision::FP32, OpRunType::ASYNC>;
+template class Net<BM, AK_FLOAT, Precision::FP32, OpRunType::SYNC>;
+#endif
+
+#ifdef ANAKIN_TYPE_FP16
+template class Net<BM, AK_FLOAT, Precision::FP16, OpRunType::ASYNC>;
+template class Net<BM, AK_FLOAT, Precision::FP16, OpRunType::SYNC>;
+#endif
+
+#ifdef ANAKIN_TYPE_INT8
+template class Net<BM, AK_FLOAT, Precision::INT8, OpRunType::ASYNC>;
+template class Net<BM, AK_FLOAT, Precision::INT8, OpRunType::SYNC>;
+#endif //int8
+
+#endif
 
 } /* namespace anakin */
 

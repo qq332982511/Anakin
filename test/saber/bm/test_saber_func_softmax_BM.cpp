@@ -13,7 +13,7 @@ TEST(TestSaberFuncBM, test_func_softmax_BM) {
     //Env<BM>::env_init();
     typedef TargetWrapper<BM> API;
 
-    typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+    typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 
     typedef TensorDf4::Dtype dtype;
 
@@ -52,7 +52,7 @@ TEST(TestSaberFuncBM, test_func_softmax_BM) {
     // start Reshape & doInfer
     Context<BM> ctx_dev(0, 1, 1);
 
-    Softmax<BM, AK_BM, AK_BM, AK_BM, NCHW> softmax_dev;
+    Softmax<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> softmax_dev;
 
     typedef std::vector<Shape> Shape_v;
 
@@ -107,7 +107,7 @@ TEST(TestSaberFuncBM, test_func_softmax_ROI_BM) {
     //Env<BM>::env_init();
     typedef TargetWrapper<BM> API;
 
-    typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+    typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 
     typedef TensorDf4::Dtype dtype;
 
@@ -138,19 +138,21 @@ TEST(TestSaberFuncBM, test_func_softmax_ROI_BM) {
     for (int i = 0; i < thin.size(); ++i) {
         thin.mutable_data()[i] = (i % 3);
     }
-
+            LOG(INFO) << "before init";
     TensorDf4 tdin, tdin_roi, tdout, tdout_roi;
     tdin.re_alloc(shape_in);
     tdout.re_alloc(shape_in);
     tdin.copy_from(thin);
     tdin_roi.share_sub_buffer(tdin, shape_in_roi, Shape(0, 0, 0, 0));
+    tdout_roi.re_alloc(shape_out);
     input_dev_4d.push_back(&tdin_roi);
     output_dev_4d.push_back(&tdout_roi);
+            LOG(INFO) << "after push back";
 
     // start Reshape & doInfer
     Context<BM> ctx_dev(0, 1, 1);
 
-    Softmax<BM, AK_BM, AK_BM, AK_BM, NCHW> softmax_dev;
+    Softmax<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> softmax_dev;
 
     LOG(INFO) << "shape out 4d: " << shape_out[0] << ", " << shape_out[1] << ", " << \
               shape_out[2] << ", " << shape_out[3];

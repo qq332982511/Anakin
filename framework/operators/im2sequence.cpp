@@ -61,23 +61,21 @@ Status Im2SequenceHelper<Ttype, Dtype, Ptype>::InferShape(const std::vector<Tens
 template class Im2SequenceHelper<NV, AK_FLOAT, Precision::FP32>;
 template class Im2SequenceHelper<NV, AK_FLOAT, Precision::FP16>;
 template class Im2SequenceHelper<NV, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Im2Sequence, Im2SequenceHelper, NV, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_ARM_PLACE
 template class Im2SequenceHelper<ARM, AK_FLOAT, Precision::FP32>;
 template class Im2SequenceHelper<ARM, AK_FLOAT, Precision::FP16>;
 template class Im2SequenceHelper<ARM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Im2Sequence, Im2SequenceHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
-//template class Im2SequenceHelper<ARM, AK_FLOAT, Precision::FP32>;
-//template class Im2SequenceHelper<ARM, AK_FLOAT, Precision::FP16>;
-//template class Im2SequenceHelper<ARM, AK_FLOAT, Precision::INT8>;
-// register helper 
-#ifdef USE_CUDA
-ANAKIN_REGISTER_OP_HELPER(Im2Sequence, Im2SequenceHelper, NV, AK_FLOAT, Precision::FP32);
-#endif
-#ifdef USE_ARM_PLACE
-ANAKIN_REGISTER_OP_HELPER(Im2Sequence, Im2SequenceHelper, ARM, AK_FLOAT, Precision::FP32);
+#ifdef USE_BM
+template class Im2SequenceHelper<BM, AK_FLOAT, Precision::FP32>;
+template class Im2SequenceHelper<BM, AK_FLOAT, Precision::FP16>;
+template class Im2SequenceHelper<BM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Im2Sequence, Im2SequenceHelper, BM, AK_FLOAT, Precision::FP32);
 #endif
 
 //! register op
@@ -88,6 +86,9 @@ ANAKIN_REGISTER_OP(Im2Sequence)
 #endif
 #ifdef USE_ARM_PLACE
     .__alias__<ARM, AK_FLOAT, Precision::FP32>("im2sequence")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("im2sequence")
 #endif
     .num_in(1)
     .num_out(1)

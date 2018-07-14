@@ -103,6 +103,25 @@ template class ArgmaxHelper<ARM, AK_FLOAT, Precision::INT8>;
 
 #endif //arm
 
+
+#ifdef USE_BM
+
+#ifdef ANAKIN_TYPE_FP32
+INSTANCE_ARGMAX(BM, AK_FLOAT, Precision::FP32);
+template class ArgmaxHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Argmax, ArgmaxHelper, BM, AK_FLOAT, Precision::FP32);
+#endif //fp32
+
+#ifdef ANAKIN_TYPE_FP16
+template class ArgmaxHelper<BM, AK_FLOAT, Precision::FP16>;
+#endif //fp16
+
+#ifdef ANAKIN_TYPE_INT8
+template class ArgmaxHelper<BM, AK_FLOAT, Precision::INT8>;
+#endif //int8
+
+#endif //arm
+
 //! register op
 ANAKIN_REGISTER_OP(Argmax)
 .Doc("Argmax operator")
@@ -115,6 +134,10 @@ ANAKIN_REGISTER_OP(Argmax)
 
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("Argmax")
+#endif
+
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("Argmax")
 #endif
 .num_in(1)
 .num_out(1)

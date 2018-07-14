@@ -355,7 +355,20 @@ template class NodeIO<ARM, AK_FLOAT, Precision::FP16>;
 #ifdef ANAKIN_TYPE_INT8
 template class NodeIO<ARM, AK_FLOAT, Precision::INT8>;
 #endif
+#endif
 
+#ifdef USE_BM
+#ifdef ANAKIN_TYPE_FP32
+template class NodeIO<BM, AK_FLOAT, Precision::FP32>;
+#endif
+
+#ifdef ANAKIN_TYPE_FP16
+template class NodeIO<BM, AK_FLOAT, Precision::FP16>;
+#endif
+
+#ifdef ANAKIN_TYPE_INT8
+template class NodeIO<BM, AK_FLOAT, Precision::INT8>;
+#endif
 #endif
 
 } /* parser */

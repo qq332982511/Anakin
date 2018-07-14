@@ -53,6 +53,12 @@ template class SplitHelper<X86, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Split, SplitHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_SPLIT(BM, AK_FLOAT, Precision::FP32);
+template class SplitHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Split, SplitHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Split)
 .Doc("Split operator")
@@ -64,6 +70,9 @@ ANAKIN_REGISTER_OP(Split)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("split")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("split")
 #endif
 .num_in(1)
 .num_out(1)

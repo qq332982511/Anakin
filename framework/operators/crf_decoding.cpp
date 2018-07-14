@@ -56,31 +56,28 @@ Status CrfDecodingHelper<Ttype, Dtype, Ptype>::InferShape(
 template class CrfDecodingHelper<NV, AK_FLOAT, Precision::FP32>;
 template class CrfDecodingHelper<NV, AK_FLOAT, Precision::FP16>;
 template class CrfDecodingHelper<NV, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(CrfDecoding, CrfDecodingHelper, NV, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_ARM_PLACE
 template class CrfDecodingHelper<ARM, AK_FLOAT, Precision::FP32>;
 template class CrfDecodingHelper<ARM, AK_FLOAT, Precision::FP16>;
 template class CrfDecodingHelper<ARM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(CrfDecoding, CrfDecodingHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_X86_PLACE
 template class CrfDecodingHelper<X86, AK_FLOAT, Precision::FP32>;
 template class CrfDecodingHelper<X86, AK_FLOAT, Precision::FP16>;
 template class CrfDecodingHelper<X86, AK_FLOAT, Precision::INT8>;
-#endif
-
-// register helper
-#ifdef USE_CUDA
-ANAKIN_REGISTER_OP_HELPER(CrfDecoding, CrfDecodingHelper, NV, AK_FLOAT, Precision::FP32);
-#endif
-
-#ifdef USE_ARM_PLACE
-ANAKIN_REGISTER_OP_HELPER(CrfDecoding, CrfDecodingHelper, ARM, AK_FLOAT, Precision::FP32);
-#endif
-
-#ifdef USE_X86_PLACE
 ANAKIN_REGISTER_OP_HELPER(CrfDecoding, CrfDecodingHelper, X86, AK_FLOAT, Precision::FP32);
+#endif
+
+#ifdef USE_BM
+template class CrfDecodingHelper<BM, AK_FLOAT, Precision::FP32>;
+template class CrfDecodingHelper<BM, AK_FLOAT, Precision::FP16>;
+template class CrfDecodingHelper<BM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(CrfDecoding, CrfDecodingHelper, BM, AK_FLOAT, Precision::FP32);
 #endif
 
 //! register op
@@ -94,6 +91,9 @@ ANAKIN_REGISTER_OP(CrfDecoding)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("CrfDecoding")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("CrfDecoding")
 #endif
 .num_in(1)
 .num_out(1);

@@ -11,7 +11,7 @@ using namespace anakin::saber;
 TEST(TestSaberFuncBM, test_func_batch_norm_BM) {
 
     typedef TargetWrapper<BM> API;
-    typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+    typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
     typedef TensorDf4::Dtype dtype;
 
     //Input / output tensor
@@ -47,7 +47,7 @@ TEST(TestSaberFuncBM, test_func_batch_norm_BM) {
     BatchnormParam<TensorDf4> param(mean, variance, scale_in);
 
     //BatachNorm
-    BatchNorm<BM, AK_BM, AK_BM, AK_BM, NCHW> batchNorm;
+    BatchNorm<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> batchNorm;
 
     output_dev_4d.push_back(&tdout);
     batchNorm.compute_output_shape(input_dev_4d, output_dev_4d, param);

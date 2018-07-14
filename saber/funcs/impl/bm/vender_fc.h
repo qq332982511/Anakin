@@ -24,9 +24,9 @@ public:
     typedef Tensor<BM, inDtype, LayOutType_in> DataTensor_in;
     typedef Tensor<BM, outDtype, LayOutType_out> DataTensor_out;
     typedef Tensor<BM, OpDtype, LayOutType_op> OpTensor;
-    typedef typename DataTensor_in::Dtype InDataType;
-    typedef typename DataTensor_out::Dtype OutDataType;
-    typedef typename OpTensor::Dtype OpDataType;
+    typedef typename DataTensor_in::PtrDtype InDataType;
+    typedef typename DataTensor_out::PtrDtype OutDataType;
+    typedef typename OpTensor::PtrDtype OpDataType;
 
     VenderFc(): _handle(NULL) {};
     ~VenderFc() {}
@@ -46,10 +46,10 @@ public:
     virtual SaberStatus dispatch(const std::vector<DataTensor_in *>& inputs,
                             std::vector<DataTensor_out *>& outputs,
                             FcParam<OpTensor>& param){
-        const InDataType *in_data = (const InDataType *) inputs[0]->data();
-        const InDataType *weights = (const InDataType *) param.weights->get_buf()->get_data();
-        const InDataType *bias = (const InDataType *) param.bias->get_buf()->get_data();
-        OutDataType *out_data = (OutDataType *) outputs[0]->mutable_data();
+        const InDataType in_data = inputs[0]->data();
+        const InDataType weights =param.weights->data();
+        const InDataType bias = param.bias->data();
+        OutDataType out_data =  outputs[0]->mutable_data();
         int batch_size = inputs[0]->num();
         int input_len = inputs[0]->channel();
         int output_len = param.num_output;
@@ -64,7 +64,7 @@ private:
     bm_handle_t _handle;
 };
 
-template class VenderFc<BM, AK_BM, AK_BM, AK_BM, NCHW, NCHW, NCHW>;
+template class VenderFc<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW, NCHW, NCHW>;
 } //namespace saber
 
 } //namespace anakin

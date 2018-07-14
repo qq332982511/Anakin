@@ -61,31 +61,28 @@ Status SequencePoolHelper<Ttype, Dtype, Ptype>::InferShape(const std::vector<Ten
 template class SequencePoolHelper<NV, AK_FLOAT, Precision::FP32>;
 template class SequencePoolHelper<NV, AK_FLOAT, Precision::FP16>;
 template class SequencePoolHelper<NV, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(SequencePool, SequencePoolHelper, NV, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_ARM_PLACE
 template class SequencePoolHelper<ARM, AK_FLOAT, Precision::FP32>;
 template class SequencePoolHelper<ARM, AK_FLOAT, Precision::FP16>;
 template class SequencePoolHelper<ARM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(SequencePool, SequencePoolHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_X86_PLACE
 template class SequencePoolHelper<X86, AK_FLOAT, Precision::FP32>;
 template class SequencePoolHelper<X86, AK_FLOAT, Precision::FP16>;
 template class SequencePoolHelper<X86, AK_FLOAT, Precision::INT8>;
-#endif
-
-// register helper
-#ifdef USE_CUDA
-ANAKIN_REGISTER_OP_HELPER(SequencePool, SequencePoolHelper, NV, AK_FLOAT, Precision::FP32);
-#endif
-
-#ifdef USE_ARM_PLACE
-ANAKIN_REGISTER_OP_HELPER(SequencePool, SequencePoolHelper, ARM, AK_FLOAT, Precision::FP32);
-#endif
-
-#ifdef USE_X86_PLACE
 ANAKIN_REGISTER_OP_HELPER(SequencePool, SequencePoolHelper, X86, AK_FLOAT, Precision::FP32);
+#endif
+
+#ifdef USE_BM
+template class SequencePoolHelper<BM, AK_FLOAT, Precision::FP32>;
+template class SequencePoolHelper<BM, AK_FLOAT, Precision::FP16>;
+template class SequencePoolHelper<BM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(SequencePool, SequencePoolHelper, BM, AK_FLOAT, Precision::FP32);
 #endif
 
 //! register op
@@ -99,6 +96,9 @@ ANAKIN_REGISTER_OP(SequencePool)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("SequencePool")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("SequencePool")
 #endif
 .num_in(1)
 .num_out(1)

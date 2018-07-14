@@ -96,6 +96,11 @@ ANAKIN_REGISTER_OP_HELPER(Embedding, EmbeddingHelper, ARM, AK_FLOAT, Precision::
 #ifdef USE_X86_PLACE
 ANAKIN_REGISTER_OP_HELPER(Embedding, EmbeddingHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
+
+#ifdef USE_BM
+ANAKIN_REGISTER_OP_HELPER(Embedding, EmbeddingHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Embedding)
 .Doc("Embedding operator")
@@ -107,6 +112,9 @@ ANAKIN_REGISTER_OP(Embedding)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("embedding")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("embedding")
 #endif
 .num_in(1)
 .num_out(1)

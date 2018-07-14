@@ -112,28 +112,21 @@ Status SequenceConvHelper<Ttype, Dtype, Ptype>::InferShape(const
 template class SequenceConvHelper<X86, AK_FLOAT, Precision::FP32>;
 template class SequenceConvHelper<X86, AK_FLOAT, Precision::FP16>;
 template class SequenceConvHelper<X86, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(SequenceConv, SequenceConvHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
 #ifdef USE_CUDA
 template class SequenceConvHelper<NV, AK_FLOAT, Precision::FP32>;
 template class SequenceConvHelper<NV, AK_FLOAT, Precision::FP16>;
 template class SequenceConvHelper<NV, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(SequenceConv, SequenceConvHelper, NV, AK_FLOAT, Precision::FP32);
 #endif
 #ifdef USE_ARM_PLACE
 template class SequenceConvHelper<ARM, AK_FLOAT, Precision::FP32>;
 template class SequenceConvHelper<ARM, AK_FLOAT, Precision::FP16>;
 template class SequenceConvHelper<ARM, AK_FLOAT, Precision::INT8>;
-#endif
-// register helper
-#ifdef USE_X86_PLACE
-ANAKIN_REGISTER_OP_HELPER(SequenceConv, SequenceConvHelper, X86, AK_FLOAT, Precision::FP32);
-#endif
-
-#ifdef USE_CUDA
-ANAKIN_REGISTER_OP_HELPER(SequenceConv, SequenceConvHelper, NV, AK_FLOAT, Precision::FP32);
-#endif
-#ifdef USE_ARM_PLACE
 ANAKIN_REGISTER_OP_HELPER(SequenceConv, SequenceConvHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
+
 //! register op
 ANAKIN_REGISTER_OP(SequenceConv)
 .Doc("SequenceConv operator")
@@ -145,6 +138,9 @@ ANAKIN_REGISTER_OP(SequenceConv)
 #endif
 #ifdef USE_ARM_PLACE
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("SequenceConv")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("SequenceConv")
 #endif
 .num_in(1)
 .num_out(1)

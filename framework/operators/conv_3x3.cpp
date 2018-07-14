@@ -95,6 +95,7 @@ ANAKIN_REGISTER_OP_HELPER(SassConvolution, SassConvolutionHelper, NV, AK_FLOAT, 
 //ANAKIN_REGISTER_OP_HELPER(SassConvolution, SassConvolutionHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
+
 //! register op
 ANAKIN_REGISTER_OP(SassConvolution)
 .Doc("SassConvolution operator")

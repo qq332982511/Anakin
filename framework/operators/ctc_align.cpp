@@ -73,6 +73,10 @@ ANAKIN_REGISTER_OP_HELPER(CtcAlign, CtcAlignHelper, NV, AK_FLOAT, Precision::FP3
 ANAKIN_REGISTER_OP_HELPER(CtcAlign, CtcAlignHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+ANAKIN_REGISTER_OP_HELPER(CtcAlign, CtcAlignHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(CtcAlign)
     .Doc("CtcAlign operator")
@@ -81,6 +85,9 @@ ANAKIN_REGISTER_OP(CtcAlign)
 #endif
 #ifdef USE_ARM_PLACE
     .__alias__<ARM, AK_FLOAT, Precision::FP32>("ctc_align")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("ctc_align")
 #endif
     .num_in(1)
     .num_out(1)

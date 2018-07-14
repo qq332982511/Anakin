@@ -6,8 +6,9 @@ using namespace anakin::saber;
 typedef TargetWrapper<X86> X86_API;
 typedef TargetWrapper<BM> BM_API;
 typedef Tensor<X86, AK_FLOAT, NCHW> TensorHf4;
-typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 typedef TensorHf4::Dtype dtype;
+typedef TensorDf4::PtrDtype dtype2_ptr;
 typedef TensorDf4::Dtype dtype2;
 
 
@@ -90,9 +91,9 @@ TEST(TestSaberTensorBM, test_tensor_constructor) {
     LOG(INFO) <<
               "test tensor constructor with data, if target is different, create buffer, and copy the data";
     dtype* host_data_ptr;
-    dtype2* dev_data_ptr;
+    dtype2_ptr dev_data_ptr;
     void* tmp_pt_host;
-    void* tmp_pt_dev;
+    BM_mem_addr tmp_pt_dev;
     X86_API::mem_alloc(&tmp_pt_host, sizeof(dtype) * sh1.count());
     host_data_ptr = static_cast<dtype*>(tmp_pt_host);
 
@@ -101,7 +102,7 @@ TEST(TestSaberTensorBM, test_tensor_constructor) {
     }
 
     BM_API::mem_alloc(&tmp_pt_dev, sizeof(dtype2) * sh1.count());
-    dev_data_ptr = static_cast<dtype2*>(tmp_pt_dev);
+    dev_data_ptr = static_cast<dtype2_ptr>(tmp_pt_dev);
 //---    cudaMemcpy(dev_data_ptr, host_data_ptr, sizeof(dtype) * sh1.count(), cudaMemcpyHostToDevice);
     BM_API::sync_memcpy(dev_data_ptr,0,host_data_ptr,0,0,__HtoD());
     LOG(INFO) << "|--construct host tensor from host data ptr";
@@ -418,9 +419,9 @@ TEST(TestSaberTensorBM, test_tensor_deepcopy) {
 }
 
 TEST(TestSaberTensorBM, test_tensor_shape) {
-    typedef Tensor<X86, AK_BM, NCHW> Tensor4_0;
-    typedef Tensor<X86, AK_BM, NHWC> Tensor4_1;
-    typedef Tensor<X86, AK_BM, HW> Tensor2;
+    typedef Tensor<X86, AK_FLOAT, NCHW> Tensor4_0;
+    typedef Tensor<X86, AK_FLOAT, NHWC> Tensor4_1;
+    typedef Tensor<X86, AK_FLOAT, HW> Tensor2;
 
     int nin = 2;
     int cin = 2;
@@ -615,8 +616,8 @@ TEST(TestSaberTensorBM, test_tensor_op) {
 
 TEST(TestSaberTensorBM, test_tensor_share_diff_dtype) {
     Shape sh{1, 1, 2, 10};
-    Tensor<BM, AK_BM, NCHW> td1(sh);
-    Tensor<X86, AK_BM, NCHW> th1(sh);
+    Tensor<BM, AK_FLOAT, NCHW> td1(sh);
+    Tensor<X86, AK_FLOAT, NCHW> th1(sh);
     Tensor<BM, AK_INT8, NCHW> td2;
     Tensor<X86, AK_INT8, NCHW> th2;
     td2.set_shape(sh);
@@ -640,8 +641,8 @@ TEST(TestSaberTensorBM, test_tensor_share_diff_dtype) {
 
 TEST(TestSaberTensorBM, test_tensor_base_type) {
     Shape sh(1, 3, 10, 10);
-    Tensor<BM, AK_BM, NCHW> td1(sh);
-    Tensor<X86, AK_BM, NCHW> th1(sh);
+    Tensor<BM, AK_FLOAT, NCHW> td1(sh);
+    Tensor<X86, AK_FLOAT, NCHW> th1(sh);
     fill_tensor_host_rand(th1, 0.f, 255.f);
     td1.copy_from(th1);
     TensorBase* tb1;

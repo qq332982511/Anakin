@@ -88,6 +88,19 @@ Status SoftmaxHelper<ARM, AK_FLOAT, Precision::FP32>::Init(OpContext<ARM> &ctx, 
 }
 ANAKIN_REGISTER_OP_HELPER(Softmax, SoftmaxHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
+
+#ifdef USE_BM
+INSTANCE_SOFTMAX(BM, AK_FLOAT, Precision::FP32);
+template <>
+Status SoftmaxHelper<BM, AK_FLOAT, Precision::FP32>::Init(OpContext<BM> &ctx, \
+    const std::vector<Tensor4dPtr<BM, AK_FLOAT> >& ins, \
+    std::vector<Tensor4dPtr<BM, AK_FLOAT> >& outs) {
+    SABER_CHECK(_funcs_softmax.init(ins, outs, _param_softmax, SPECIFY, SABER_IMPL, ctx));
+    return Status::OK();
+}
+ANAKIN_REGISTER_OP_HELPER(Softmax, SoftmaxHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Softmax)
 .Doc("Softmax operator")
@@ -99,6 +112,9 @@ ANAKIN_REGISTER_OP(Softmax)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("softmax")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("softmax")
 #endif
 .num_in(1)
 .num_out(1)

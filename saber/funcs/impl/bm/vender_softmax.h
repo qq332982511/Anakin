@@ -27,9 +27,9 @@ public:
     typedef Tensor<BM, inDtype, LayOutType_in> DataTensor_in;
     typedef Tensor<BM, outDtype, LayOutType_out> DataTensor_out;
     typedef Tensor<BM, OpDtype, LayOutType_op> OpTensor;
-    typedef typename DataTensor_in::Dtype InDataType;
-    typedef typename DataTensor_out::Dtype OutDataType;
-    typedef typename OpTensor::Dtype OpDataType;
+    typedef typename DataTensor_in::PtrDtype InDataType;
+    typedef typename DataTensor_out::PtrDtype OutDataType;
+    typedef typename OpTensor::PtrDtype OpDataType;
 
     VenderSoftmax(): _handle(NULL) {}
     ~VenderSoftmax() {}
@@ -60,8 +60,8 @@ public:
                           std::vector<DataTensor_out*>& outputs,
                           SoftmaxParam<OpTensor> &param){
 
-        const InDataType *in_data = (const InDataType *) inputs[0]->data();
-        OutDataType *out_data = (OutDataType *) outputs[0]->mutable_data();
+        const InDataType in_data = inputs[0]->data();
+        OutDataType out_data =  outputs[0]->mutable_data();
 
         /*
         int input_n = inputs[0]->num();
@@ -87,11 +87,11 @@ public:
         
         bmdnn_softmax_forward(
                 _handle,
-                *in_data,
+                in_data,
                 N,
                 K,
                 H * W,
-                *out_data
+                out_data
         );
 
         return SaberSuccess;
@@ -100,7 +100,7 @@ public:
 private:
     bm_handle_t _handle;
 };
-template class VenderSoftmax<BM,AK_BM,AK_BM,AK_BM,NCHW,NCHW,NCHW>;
+template class VenderSoftmax<BM,AK_FLOAT,AK_FLOAT,AK_FLOAT,NCHW,NCHW,NCHW>;
 } //namespace saber
 
 } //namespace anakin

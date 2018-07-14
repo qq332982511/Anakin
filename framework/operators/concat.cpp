@@ -58,6 +58,12 @@ template class ConcatHelper<X86, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Concat, ConcatHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_CONCAT(BM, AK_FLOAT, Precision::FP32);
+template class ConcatHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Concat, ConcatHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Concat)
 .Doc("Concat operator")
@@ -69,6 +75,9 @@ ANAKIN_REGISTER_OP(Concat)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("concat")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("concat")
 #endif
 .num_in(2)
 .num_out(1)

@@ -101,6 +101,12 @@ template class ConvolutionHelper<ARM, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Convolution, ConvolutionHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_CONVOLUTION(BM, AK_FLOAT, Precision::FP32);
+template class ConvolutionHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Convolution, ConvolutionHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Convolution)
 .Doc("Convolution operator")
@@ -109,6 +115,9 @@ ANAKIN_REGISTER_OP(Convolution)
 #endif
 #ifdef USE_ARM_PLACE
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("convolution")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("convolution")
 #endif
 .num_in(1)
 .num_out(1)

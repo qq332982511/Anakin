@@ -14,7 +14,7 @@ TEST(TestSaberFuncBM, test_func_pooling) {
     typedef TargetWrapper<X86> X86_API;
     typedef TargetWrapper<BM> BM_API;
     typedef Tensor<X86, AK_FLOAT, NCHW> TensorHf4;
-    typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+    typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 
     int img_num = 1;
     int in_channels = 4;
@@ -59,7 +59,7 @@ TEST(TestSaberFuncBM, test_func_pooling) {
     input.push_back(&img_dev);
     output.push_back(&output_dev);
 
-    Pooling<BM, AK_BM, AK_BM, AK_BM, NCHW> pooling;
+    Pooling<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> pooling;
     pooling.compute_output_shape(input, output, param);
 
     output_dev.re_alloc(output[0]->shape());
@@ -95,7 +95,7 @@ TEST(TestSaberFuncBM, test_pooling_result) {
     typedef TargetWrapper<X86> X86_API;
     typedef TargetWrapper<BM> BM_API;
     typedef Tensor<X86, AK_FLOAT, NCHW> TensorHf4;
-    typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+    typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 
     int img_num = 1;
     int in_channels = 1;
@@ -148,7 +148,7 @@ TEST(TestSaberFuncBM, test_pooling_result) {
     input.push_back(&img_dev);
     output.push_back(&output_dev);
 
-    Pooling<BM, AK_BM, AK_BM, AK_BM, NCHW> pooling;
+    Pooling<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> pooling;
     pooling.compute_output_shape(input, output, param);
 
     output_dev.re_alloc(output[0]->shape());
@@ -171,7 +171,7 @@ TEST(TestSaberFuncBM, test_pooling_shared_buffer) {
     typedef TargetWrapper<X86> X86_API;
     typedef TargetWrapper<BM> BM_API;
     typedef Tensor<X86, AK_FLOAT, NCHW> TensorHf4;
-    typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+    typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 
     int img_num = 1;
     int in_channels = 2;
@@ -234,9 +234,9 @@ TEST(TestSaberFuncBM, test_pooling_shared_buffer) {
     input.push_back(&img_dev);
     output.push_back(&output_dev);
 
-    Pooling<BM, AK_BM, AK_BM, AK_BM, NCHW> pooling;
-    Pooling<BM, AK_BM, AK_BM, AK_BM, NCHW> pooling0;
-    Pooling<BM, AK_BM, AK_BM, AK_BM, NCHW> pooling1;
+    Pooling<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> pooling;
+    Pooling<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> pooling0;
+    Pooling<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> pooling1;
 
     pooling.compute_output_shape(input,output,  param);
 

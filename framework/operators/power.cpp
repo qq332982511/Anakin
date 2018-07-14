@@ -72,7 +72,9 @@ ANAKIN_REGISTER_OP_HELPER(Power, PowerHelper, NV, AK_FLOAT, Precision::FP32);
 #ifdef USE_ARM_PLACE
 ANAKIN_REGISTER_OP_HELPER(Power, PowerHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
-
+#ifdef USE_BM
+ANAKIN_REGISTER_OP_HELPER(Power, PowerHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
 //! register op
 ANAKIN_REGISTER_OP(Power)
 .Doc("Power operator")
@@ -81,6 +83,9 @@ ANAKIN_REGISTER_OP(Power)
 #endif
 #ifdef USE_ARM_PLACE
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("power")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("power")
 #endif
 .num_in(1)
 .num_out(1)

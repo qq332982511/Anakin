@@ -95,29 +95,30 @@ Status LstmHelper<Ttype, Dtype, Ptype>::InferShape(const std::vector<Tensor4dPtr
 template class LstmHelper<NV, AK_FLOAT, Precision::FP32>;
 template class LstmHelper<NV, AK_FLOAT, Precision::FP16>;
 template class LstmHelper<NV, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Lstm, LstmHelper, NV, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_ARM_PLACE
 template class LstmHelper<ARM, AK_FLOAT, Precision::FP32>;
 template class LstmHelper<ARM, AK_FLOAT, Precision::FP16>;
 template class LstmHelper<ARM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Lstm, LstmHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_X86_PLACE
 template class LstmHelper<X86, AK_FLOAT, Precision::FP32>;
 template class LstmHelper<X86, AK_FLOAT, Precision::FP16>;
 template class LstmHelper<X86, AK_FLOAT, Precision::INT8>;
-#endif
-
-#ifdef USE_CUDA
-ANAKIN_REGISTER_OP_HELPER(Lstm, LstmHelper, NV, AK_FLOAT, Precision::FP32);
-#endif
-#ifdef USE_ARM_PLACE
-ANAKIN_REGISTER_OP_HELPER(Lstm, LstmHelper, ARM, AK_FLOAT, Precision::FP32);
-#endif
-#ifdef USE_X86_PLACE
 ANAKIN_REGISTER_OP_HELPER(Lstm, LstmHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
+
+#ifdef USE_BM
+template class LstmHelper<BM, AK_FLOAT, Precision::FP32>;
+template class LstmHelper<BM, AK_FLOAT, Precision::FP16>;
+template class LstmHelper<BM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Lstm, LstmHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Lstm)
     .Doc("Lstm operator")
@@ -132,6 +133,10 @@ ANAKIN_REGISTER_OP(Lstm)
 #ifdef USE_X86_PLACE
     .__alias__<X86, AK_FLOAT, Precision::FP32>("LSTM")
     .__alias__<X86, AK_FLOAT, Precision::FP32>("Lstm")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("LSTM")
+.__alias__<BM, AK_FLOAT, Precision::FP32>("Lstm")
 #endif
     .num_in(1)
     .num_out(1)

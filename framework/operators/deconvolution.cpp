@@ -105,6 +105,12 @@ template class DeconvolutionHelper<ARM, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Deconvolution, DeconvolutionHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_DECONV(BM, AK_FLOAT, Precision::FP32);
+template class DeconvolutionHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Deconvolution, DeconvolutionHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Deconvolution)
 .Doc("Deconvolution operator")
@@ -113,6 +119,9 @@ ANAKIN_REGISTER_OP(Deconvolution)
 #endif
 #ifdef USE_ARM_PLACE
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("deconvolution")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("deconvolution")
 #endif
 .num_in(1)
 .num_out(1)

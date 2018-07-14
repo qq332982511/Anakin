@@ -88,6 +88,12 @@ template class BatchNormHelper<ARM, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(BatchNorm, BatchNormHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_BATCHNORM(BM, AK_FLOAT, Precision::FP32);
+template class BatchNormHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(BatchNorm, BatchNormHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(BatchNorm)
 .Doc("BatchNorm operator")
@@ -95,6 +101,9 @@ ANAKIN_REGISTER_OP(BatchNorm)
 .__alias__<NV, AK_FLOAT, Precision::FP32>("eps")
 #endif
 #ifdef USE_ARM_PLACE
+.__alias__<ARM, AK_FLOAT, Precision::FP32>("eps")
+#endif
+#ifdef USE_BM
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("eps")
 #endif
 .num_in(1)

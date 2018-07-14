@@ -40,7 +40,7 @@ struct TensorTraits<Tensor<TargetType, datatype, NCHW_C16>>
 {
     typedef typename Tensor<TargetType, datatype, NCHW_C16>::target_category  target_category;
     typedef typename Tensor<TargetType, datatype, NCHW_C16>::target_type target_type;
-    typedef typename DataTrait<target_type, datatype>::dtype Dtype;
+    typedef typename DataTrait<target_type, datatype>::Dtype Dtype;
     typedef _5D layout_category;
     typedef NCHW_C16 layout_type;
     using layout_dims = std::integral_constant<int, 5>;
@@ -72,7 +72,7 @@ struct TensorTraits<Tensor<TargetType, datatype, NCHW_C8>>
 {
     typedef typename Tensor<TargetType, datatype, NCHW_C8>::target_category  target_category;
     typedef typename Tensor<TargetType, datatype, NCHW_C8>::target_type target_type;
-    typedef typename DataTrait<target_type, datatype>::dtype Dtype;
+    typedef typename DataTrait<target_type, datatype>::Dtype Dtype;
     typedef _5D layout_category;
     typedef NCHW_C8 layout_type;
     using layout_dims = std::integral_constant<int, 5>;
@@ -104,7 +104,7 @@ struct TensorTraits<Tensor<TargetType, datatype, NCHW_C4>>
 {
     typedef typename Tensor<TargetType, datatype, NCHW_C4>::target_category  target_category;
     typedef typename Tensor<TargetType, datatype, NCHW_C4>::target_type target_type;
-    typedef typename DataTrait<target_type, datatype>::dtype Dtype;
+    typedef typename DataTrait<target_type, datatype>::Dtype Dtype;
     typedef _5D layout_category;
     typedef NCHW_C4 layout_type;
     using layout_dims = std::integral_constant<int, 5>;
@@ -135,7 +135,7 @@ struct TensorTraits<Tensor<TargetType, datatype, NCHW>>
 {
     typedef typename Tensor<TargetType, datatype, NCHW>::target_category  target_category;
     typedef typename Tensor<TargetType, datatype, NCHW>::target_type target_type;
-    typedef typename DataTrait<target_type, datatype>::dtype Dtype;
+    typedef typename DataTrait<target_type, datatype>::Dtype Dtype;
     typedef _4D layout_category;
     typedef NCHW layout_type;
     using layout_dims = std::integral_constant<int, 4>;
@@ -301,7 +301,7 @@ static inline int MemShare(std::shared_ptr<Buffer<TargetType_dst>>& dst, \
     return 0;
 }
 
-template <typename TargetType_dst, typename TargetType_src>
+template <typename TargetType_dst, typename TargetType_src  >
 static inline int MemShare(std::shared_ptr<Buffer<TargetType_dst>>& dst, \
     const std::shared_ptr<Buffer<TargetType_src>>& src, __HtoD) {
     //LOG(INFO) << "copied H2D";
@@ -310,7 +310,7 @@ static inline int MemShare(std::shared_ptr<Buffer<TargetType_dst>>& dst, \
     return 0;
 }
 
-template <typename TargetType_dst, typename TargetType_src>
+template <typename TargetType_dst, typename TargetType_src  >
 static inline int MemShare(std::shared_ptr<Buffer<TargetType_dst>>& dst, \
     const std::shared_ptr<Buffer<TargetType_src>>& src, __HtoH) {
     //LOG(INFO) << "shared H2H";
@@ -318,7 +318,7 @@ static inline int MemShare(std::shared_ptr<Buffer<TargetType_dst>>& dst, \
     return 1;
 }
 
-template <typename TargetType_dst, typename TargetType_src>
+template <typename TargetType_dst, typename TargetType_src  >
 static inline int MemShare(std::shared_ptr<Buffer<TargetType_dst>>& dst, \
     const std::shared_ptr<Buffer<TargetType_src>>& src, __DtoH) {
     //LOG(INFO) << "copied D2H";
@@ -327,7 +327,7 @@ static inline int MemShare(std::shared_ptr<Buffer<TargetType_dst>>& dst, \
     return 0;
 }
 
-template <typename TargetType_dst, typename TargetType_src>
+template <typename TargetType_dst, typename TargetType_src  >
 static inline int BufferMemShare(std::shared_ptr<Buffer<TargetType_dst>>& dst, \
     const std::shared_ptr<Buffer<TargetType_src>>& src){
 

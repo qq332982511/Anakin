@@ -15,8 +15,11 @@
 
 #ifndef ANAKIN_SABER_CORE_TARGET_WRAPPER_H
 #define ANAKIN_SABER_CORE_TARGET_WRAPPER_H
-#include "core/target_traits.h"
+
+
 #include <memory>
+#include "core/data_traits.h"
+#include "core/target_traits.h"
 
 namespace anakin {
 
@@ -49,7 +52,9 @@ template <typename TargetType>
 class Buffer;
 
 template <typename TargetType, typename target_category = typename TargetTypeTraits<TargetType>::target_category>
-struct TargetWrapper {};
+struct TargetWrapper {
+    typedef typename PtrTrait<BM>::PtrType TPtr;
+};
 
 /**
  * \brief for host target only, arm, x86
@@ -362,21 +367,15 @@ struct TargetWrapper<NV, __device_target> {
 #endif //USE_CUDA
 
 #ifdef USE_BM
-        /**
+/**
  * \brief for Bitmain sophon device target only, device target is BM tpu
  * use bitmain api to manage memory
  * support device to device, device to host, host to device memcpy
 */
 template <>
 struct TargetWrapper<BM, __device_target> {
-//    TargetWrapper<BM, __device_target> ()
-//    {
-//        CHECK_EQ(bmdnn_init(&handle),BM_SUCCESS) << "Error:bmdnn_init failed";
-//    }
-//    ~TargetWrapper<BM, __device_target> ()
-//    {
-//        CHECK_EQ(bmdnn_deinit(handle),BM_SUCCESS) << "Error:bmdnn_deinit failed";
-//    }
+
+    typedef typename PtrTrait<BM>::PtrType TPtr;
 
     typedef void* event_t;
     typedef void* stream_t;
@@ -386,13 +385,13 @@ struct TargetWrapper<BM, __device_target> {
     static void set_device(int id);
 
     //We should add strategy to avoid malloc directly
-    static void mem_alloc(void** ptr, size_t n);
+    static void mem_alloc(TPtr* ptr, size_t n);
 
     //template <typename void>
-    static void mem_free(void * ptr); 
-    
+    static void mem_free(TPtr ptr);
+
     //template <typename void>
-    static void mem_set(void* ptr, int value, size_t n);
+    static void mem_set(TPtr ptr, int value, size_t n);
 
     // brief create event, empty function for bitmain target
     static void create_event(event_t& event, bool flag = false) {}
@@ -407,17 +406,17 @@ struct TargetWrapper<BM, __device_target> {
     static void sync_stream(event_t& event, stream_t& stream) {}
     // brief create event, empty function for bitmain target
 
-    static void sync_memcpy(void* dst, int dst_id, const void* src, int src_id, \
-        size_t count, __DtoD);
+    static void sync_memcpy(TPtr dst, int dst_id, const TPtr src, int src_id, \
+size_t count, __DtoD);
 
-    static void sync_memcpy(void* dst, int dst_id, const void* src, int src_id, \
-        size_t count, __HtoD);
+    static void sync_memcpy(TPtr dst, int dst_id, const void* src, int src_id, \
+size_t count, __HtoD);
 
-    static void sync_memcpy(void* dst, int dst_id, const void* src, int src_id, \
-        size_t count, __DtoH);
+    static void sync_memcpy(void* dst, int dst_id, const TPtr src, int src_id, \
+size_t count, __DtoH);
 
-    static void sync_memcpy_p2p(void* dst, int dst_dev, const void* src, \
-        int src_dev, size_t count);
+    static void sync_memcpy_p2p(TPtr dst, int dst_dev, const TPtr src, \
+int src_dev, size_t count);
 
     /**
      * \brief device target return currently used device id
@@ -426,11 +425,10 @@ struct TargetWrapper<BM, __device_target> {
     static int get_device_id();
 
 //    static bm_handle_t get_handler();
-    
+
 //    bm_handle_t handle;
 };
-
-#endif //USE_BM
+#endif
 
 } //namespace saber
 

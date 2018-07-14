@@ -92,12 +92,12 @@ void tensor_cmp_host(const Dtype* src1, const Dtype* src2, \
 
 #define FILL_TENSOR_HOST(target, type, layout) \
     template void fill_tensor_host_const<Tensor<target, type, layout>>\
-        (Tensor<target, type, layout>& tensor, DataTrait<target, type>::dtype value); \
+        (Tensor<target, type, layout>& tensor, DataTrait<target, type>::Dtype value); \
     template void fill_tensor_host_rand<Tensor<target, type, layout>>\
         (Tensor<target, type, layout>& tensor); \
     template void fill_tensor_host_rand<Tensor<target, type, layout>>\
-        (Tensor<target, type, layout>& tensor, DataTrait<target, type>::dtype vstart, \
-        DataTrait<target, type>::dtype vend); \
+        (Tensor<target, type, layout>& tensor, DataTrait<target, type>::Dtype vstart, \
+        DataTrait<target, type>::Dtype vend); \
     template void print_tensor_host<Tensor<target, type, layout>>\
         (Tensor<target, type, layout>& tensor);\
     template void fill_tensor_host_seq<Tensor<target, type, layout>>\
@@ -366,22 +366,22 @@ Context<NV> ctx) {
 #ifdef USE_BM
 
 template<>
-void fill_tensor_device_rand<Tensor<BM, AK_BM, NCHW>>(Tensor<BM, AK_BM, NCHW>& tensor, \
-    typename Tensor<BM, AK_BM, NCHW>::API::stream_t stream) {
+void fill_tensor_device_rand<Tensor<BM, AK_FLOAT, NCHW>>(Tensor<BM, AK_FLOAT, NCHW>& tensor, \
+    typename Tensor<BM, AK_FLOAT, NCHW>::API::stream_t stream) {
 
     float *host_mem_input = new float[tensor.size()];
     for (int i = 0; i < tensor.size(); ++i) {
         host_mem_input[i] = static_cast<float>(rand());
     }
 
-    bm_device_mem_t device_data_ptr = tensor.mutable_data().inner_desc;
+    bm_device_mem_t device_data_ptr = tensor.mutable_data();
     BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), device_data_ptr, bm_mem_from_system(host_mem_input)));
 
     delete [] host_mem_input;
 }
 
-void fill_tensor_device_rand(Tensor<BM, AK_BM, NCHW>& tensor, float vstart, \
-    float vend, typename Tensor<BM, AK_BM, NCHW>::API::stream_t stream = NULL){
+void fill_tensor_device_rand(Tensor<BM, AK_FLOAT, NCHW>& tensor, float vstart, \
+    float vend, typename Tensor<BM, AK_FLOAT, NCHW>::API::stream_t stream = NULL){
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -393,29 +393,29 @@ void fill_tensor_device_rand(Tensor<BM, AK_BM, NCHW>& tensor, float vstart, \
         host_mem_input[i] = random_num;
     }
 
-    bm_device_mem_t device_data_ptr = tensor.mutable_data().inner_desc;
+    bm_device_mem_t device_data_ptr = tensor.mutable_data();
     BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), device_data_ptr, bm_mem_from_system(host_mem_input)));
 
     delete [] host_mem_input;
 }
 
-void fill_tensor_device_const(Tensor<BM, AK_BM, NCHW>& tensor, float value, \
-    typename Tensor<BM, AK_BM, NCHW>::API::stream_t stream = NULL){
+void fill_tensor_device_const(Tensor<BM, AK_FLOAT, NCHW>& tensor, float value, \
+    typename Tensor<BM, AK_FLOAT, NCHW>::API::stream_t stream = NULL){
 
     float *host_mem_input = new float[tensor.size()];
     for (int i = 0; i < tensor.size(); ++i) {
         host_mem_input[i] = value;
     }
 
-    bm_device_mem_t device_data_ptr = tensor.mutable_data().inner_desc;
+    bm_device_mem_t device_data_ptr = tensor.mutable_data();
     BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), device_data_ptr, bm_mem_from_system(host_mem_input)));
 
     delete [] host_mem_input;
 }
 
 template <>
-void print_tensor_device<Tensor<BM, AK_BM, NCHW>>(Tensor<BM, AK_BM, NCHW>& tensor,  \
-    typename Tensor<BM, AK_BM, NCHW>::API::stream_t stream) {
+void print_tensor_device<Tensor<BM, AK_FLOAT, NCHW>>(Tensor<BM, AK_FLOAT, NCHW>& tensor,  \
+    typename Tensor<BM, AK_FLOAT, NCHW>::API::stream_t stream) {
 
     LOG(INFO) << "BM device tensor data:" << tensor.size();
 
@@ -434,7 +434,7 @@ void print_tensor_device<Tensor<BM, AK_BM, NCHW>>(Tensor<BM, AK_BM, NCHW>& tenso
     }*/
 
     float *host_mem = new float[tensor.size()];
-    auto device_data_ptr = (tensor.data().inner_desc);
+    auto device_data_ptr = (tensor.data());
     bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(host_mem), device_data_ptr);
 
     for (int i = 0; i < tensor.size(); ++i) {

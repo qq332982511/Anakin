@@ -396,6 +396,22 @@ template class Graph<ARM, AK_FLOAT, Precision::INT8>;
 #endif
 #endif
 
+#ifdef USE_BM
+
+#ifdef ANAKIN_TYPE_FP32
+template class Graph<BM, AK_FLOAT, Precision::FP32>;
+#endif
+
+#ifdef ANAKIN_TYPE_FP16
+template class Graph<BM, AK_FLOAT, Precision::FP16>;
+#endif
+
+#ifdef ANAKIN_TYPE_INT8
+template class Graph<BM, AK_FLOAT, Precision::INT8>;
+#endif
+
+#endif
+
 } /* namespace graph */
 
 } /* namespace anakin */

@@ -173,11 +173,11 @@ private:
 
 #ifdef USE_BM
 
-void fill_tensor_device_const(Tensor<BM, AK_BM, NCHW>& tensor, float value, \
-    typename Tensor<BM, AK_BM, NCHW>::API::stream_t stream = NULL);
+void fill_tensor_device_const(Tensor<BM, AK_FLOAT, NCHW>& tensor, float value, \
+    typename Tensor<BM, AK_FLOAT, NCHW>::API::stream_t stream = NULL);
 
-void fill_tensor_device_rand(Tensor<BM, AK_BM, NCHW>& tensor, float vstart, \
-    float vend, typename Tensor<BM, AK_BM, NCHW>::API::stream_t stream = NULL);
+void fill_tensor_device_rand(Tensor<BM, AK_FLOAT, NCHW>& tensor, float vstart, \
+    float vend, typename Tensor<BM, AK_FLOAT, NCHW>::API::stream_t stream = NULL);
 
 #endif
 

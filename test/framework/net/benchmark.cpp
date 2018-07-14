@@ -11,6 +11,7 @@
 #include <map>
 #include "framework/operators/ops.h"
 
+#define DATA_TYPE AK_FLOAT
 #if defined(USE_CUDA)
 using Target = NV;
 using Target_H = X86;
@@ -20,6 +21,11 @@ using Target_H = X86;
 #elif defined(USE_ARM_PLACE)
 using Target = ARM;
 using Target_H = ARM;
+#elif defined(USE_BM)
+using Target = BM;
+using Target_H = X86;
+#undef DATA_TYPE
+#define DATA_TYPE AK_FLOAT
 #endif
 
 #ifdef USE_GFLAGS

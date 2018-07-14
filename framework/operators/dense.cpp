@@ -103,6 +103,12 @@ template class DenseHelper<X86, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(Dense, DenseHelper, X86, AK_FLOAT, Precision::FP32);
 #endif
 
+#ifdef USE_BM
+INSTANCE_DENSE(BM, AK_FLOAT, Precision::FP32);
+template class DenseHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(Dense, DenseHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(Dense)
 .Doc("Dense operator")
@@ -117,6 +123,10 @@ ANAKIN_REGISTER_OP(Dense)
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("fullconnect")
 .__alias__<X86, AK_FLOAT, Precision::FP32>("fc")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("fullconnect")
+.__alias__<BM, AK_FLOAT, Precision::FP32>("fc")
 #endif
 .num_in(1)
 .num_out(1)

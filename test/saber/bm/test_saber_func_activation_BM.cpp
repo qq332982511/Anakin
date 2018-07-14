@@ -32,7 +32,7 @@ void print_tensor_shape(std::string name, Tensor& t0) {
 TEST(TestSaberFuncBM, test_func_constructor) {
 
     typedef Tensor<X86, AK_FLOAT, NCHW> TensorHf4;
-    typedef Tensor<BM, AK_BM, NCHW> TensorDf4;
+    typedef Tensor<BM, AK_FLOAT, NCHW> TensorDf4;
 
     int img_num = 1;
     int in_channels = 1;
@@ -69,7 +69,7 @@ TEST(TestSaberFuncBM, test_func_constructor) {
     input.push_back(&img_dev);
     output.push_back(&output_dev);
 
-    Activation<BM, AK_BM, AK_BM, AK_BM, NCHW> act;
+    Activation<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW> act;
     act.compute_output_shape(input, output, param);
     output_dev.re_alloc(output[0]->shape());
 

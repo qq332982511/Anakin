@@ -23,9 +23,9 @@ public:
     typedef Tensor<BM, inDtype, LayOutType_in> DataTensor_in;
     typedef Tensor<BM, outDtype, LayOutType_out> DataTensor_out;
     typedef Tensor<BM, OpDtype, LayOutType_op> OpTensor;
-    typedef typename DataTensor_in::Dtype InDataType;
-    typedef typename DataTensor_out::Dtype OutDataType;
-    typedef typename OpTensor::Dtype OpDataType;
+    typedef typename DataTensor_in::PtrDtype InDataType;
+    typedef typename DataTensor_out::PtrDtype OutDataType;
+    typedef typename OpTensor::PtrDtype OpDataType;
 
     VenderActivation(): _handle(NULL), _active_type(Active_relu) {}
 
@@ -50,8 +50,8 @@ public:
     virtual SaberStatus dispatch(const std::vector<DataTensor_in *>& inputs,
                             std::vector<DataTensor_out *>& outputs,
                             ActivationParam<OpTensor>& param) {
-        const InDataType in_data = *(inputs[0]->data());
-        OutDataType out_data = *(outputs[0]->mutable_data());
+        const InDataType in_data = (inputs[0]->data());
+        OutDataType out_data = (outputs[0]->mutable_data());
         int input_dim = inputs[0]->channel() * inputs[0]->height() * inputs[0]->width();
         int input_n = inputs[0]->num();
 
@@ -75,7 +75,7 @@ private:
     ActiveType _active_type;
 };
 
-template class VenderActivation<BM, AK_BM, AK_BM, AK_BM, NCHW, NCHW, NCHW>;
+template class VenderActivation<BM, AK_FLOAT, AK_FLOAT, AK_FLOAT, NCHW, NCHW, NCHW>;
 } // namespace saber
 
 } // namespace anakin

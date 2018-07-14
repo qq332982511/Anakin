@@ -60,21 +60,21 @@ Status NormalizeHelper<Ttype, Dtype, Ptype>::InferShape(const std::vector<Tensor
 template class NormalizeHelper<NV, AK_FLOAT, Precision::FP32>;
 template class NormalizeHelper<NV, AK_FLOAT, Precision::FP16>;
 template class NormalizeHelper<NV, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Normalize, NormalizeHelper, NV, AK_FLOAT, Precision::FP32);
 #endif
 
 #ifdef USE_ARM_PLACE
 template class NormalizeHelper<ARM, AK_FLOAT, Precision::FP32>;
 template class NormalizeHelper<ARM, AK_FLOAT, Precision::FP16>;
 template class NormalizeHelper<ARM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Normalize, NormalizeHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif
 
-// register helper 
-#ifdef USE_CUDA
-ANAKIN_REGISTER_OP_HELPER(Normalize, NormalizeHelper, NV, AK_FLOAT, Precision::FP32);
-#endif 
-
-#ifdef USE_ARM_PLACE
-ANAKIN_REGISTER_OP_HELPER(Normalize, NormalizeHelper, ARM, AK_FLOAT, Precision::FP32);
+#ifdef USE_BM
+template class NormalizeHelper<BM, AK_FLOAT, Precision::FP32>;
+template class NormalizeHelper<BM, AK_FLOAT, Precision::FP16>;
+template class NormalizeHelper<BM, AK_FLOAT, Precision::INT8>;
+ANAKIN_REGISTER_OP_HELPER(Normalize, NormalizeHelper, BM, AK_FLOAT, Precision::FP32);
 #endif
 
 //! register op
@@ -84,7 +84,10 @@ ANAKIN_REGISTER_OP(Normalize)
     .__alias__<NV, AK_FLOAT, Precision::FP32>("normalize")
 #endif
 #ifdef USE_ARM_PLACE
-    .__alias__<ARM, AK_FLOAT, Precision::FP32>("normalize")
+.__alias__<ARM, AK_FLOAT, Precision::FP32>("normalize")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("normalize")
 #endif
     .num_in(1)
     .num_out(1)

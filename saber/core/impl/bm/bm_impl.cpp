@@ -35,7 +35,8 @@ namespace saber{
 
 #ifdef USE_BM
 
-typedef TargetWrapper<BM, __device_target> BM_API;
+typedef  TargetWrapper<BM, __device_target>BM_API;
+
 
 // Init handle only once in the lifetime
 static bm_handle_t handle;
@@ -55,41 +56,42 @@ int BM_API::get_device_id(){
     return 0;
 }
         
-void BM_API::mem_alloc(void** ptr, size_t n){
+void BM_API::mem_alloc(TPtr* ptr, size_t n){
     handle = get_bm_handle();
     /* bm_device_mem_t *mem = reinterpret_cast<struct bm_mem_desc *>(*ptr); */
-    bm_device_mem_t *mem = new bm_device_mem_t();
-    BMDNN_CHECK(bm_malloc_device_byte(handle, mem, n));
-    *ptr = mem;
+//    bm_device_mem_t *mem = new bm_device_mem_t();
+    bm_device_mem_t mem;
+    BMDNN_CHECK(bm_malloc_device_byte(handle, &mem, n));
+    *ptr = TPtr(mem);
 }
         
-void BM_API::mem_free(void* ptr){
-    if(ptr != nullptr){
+void BM_API::mem_free(TPtr ptr){
+    if((ptr != BM_MEM_NULL)){
         handle = get_bm_handle();
-        bm_free_device(handle, *(struct bm_mem_desc*)(ptr));
-        delete ptr;
+        bm_free_device(handle, ptr);
+//        delete ptr;
     }
 }
         
-void BM_API::mem_set(void* ptr, int value, size_t n){
+void BM_API::mem_set(TPtr ptr, int value, size_t n){
     //(bm_handle_t handle, const int value, bm_device_mem_t mem){
-    BMDNN_CHECK(bm_memset_device(handle, value, bm_mem_from_system(ptr)));
+    BMDNN_CHECK(bm_memset_device(handle, value, ptr));
     //bm_device_mem_t* pmem = (struct bm_mem_desc *)(ptr);
     //BMDNN_CHECK(bm_memset_device(handle, value, *pmem));
 }
 
-void BM_API::sync_memcpy(void* dst, int dst_id, const void* src, int src_id, \
+void BM_API::sync_memcpy(TPtr dst, int dst_id, const TPtr src, int src_id, \
     size_t count, __DtoD) {
     handle = get_bm_handle(); 
     //BMDNN_CHECK(bm_memcpy_d2d(handle, bm_mem_from_device(dst), dst_id, bm_mem_from_device(src), src_id, count));
-    BMDNN_CHECK(bm_memcpy_d2d(handle, *(bm_device_mem_t *)(dst), dst_id, *(bm_device_mem_t *)(src), src_id, count));
+    BMDNN_CHECK(bm_memcpy_d2d(handle, dst, dst_id, src, src_id, count));
     LOG(INFO) << "BM sync_memcpy: device to device, finished";
 };
 
-void BM_API::sync_memcpy(void* dst, int dst_id, const void* src, int src_id, \
+void BM_API::sync_memcpy(TPtr dst, int dst_id, const void* src, int src_id, \
     size_t count, __HtoD) {
     handle = get_bm_handle(); 
-    BMDNN_CHECK(bm_memcpy_s2d(handle, *(bm_device_mem_t *)(dst), bm_mem_from_system(src)));
+    BMDNN_CHECK(bm_memcpy_s2d(handle, dst, bm_mem_from_system(src)));
 
     #ifdef DEBUG
     for(int i=0; i<10; i++)
@@ -99,10 +101,10 @@ void BM_API::sync_memcpy(void* dst, int dst_id, const void* src, int src_id, \
     LOG(INFO) << "BM sync_memcpy: host to device, finished";
 };
 
-void BM_API::sync_memcpy(void* dst, int dst_id, const void* src, int src_id, \
+void BM_API::sync_memcpy(void* dst, int dst_id, const TPtr src, int src_id, \
     size_t count, __DtoH) {
     handle = get_bm_handle(); 
-    BMDNN_CHECK(bm_memcpy_d2s(handle, bm_mem_from_system(dst), *(bm_device_mem_t *)(src)));
+    BMDNN_CHECK(bm_memcpy_d2s(handle, bm_mem_from_system(dst), src));
 
     #ifdef DEBUG
     for(int i=0; i<10; i++)
@@ -112,40 +114,28 @@ void BM_API::sync_memcpy(void* dst, int dst_id, const void* src, int src_id, \
     LOG(INFO) << "BM sync_memcpy: device to host, finished";
 };
 
-void BM_API::sync_memcpy_p2p(void* dst, int dst_dev, const void* src, \
+void BM_API::sync_memcpy_p2p(TPtr dst, int dst_dev, const TPtr src, \
     int src_dev, size_t count) { 
 
     LOG(INFO) << "BM sync_memcpy_p2p: temporarily no used";
 };
 
 
-//! target wrapper
-template struct TargetWrapper<BM, __device_target>;
+
 
 //! BM Buffer
 template class Buffer<BM>;
 
 //! BM Tensor
-INSTANTIATE_TENSOR(BM, AK_BM, NCHW);
 
-template <>
-Tensor<BM,AK_BM, NCHW>::mutable_data(int index = 0) {
-    // synchronize the events tree
-    //sync();
-            CHECK_EQ(device_id(), API::get_device_id()) << \
-            "tensor is not declared in current device";
-    if (_buf->get_capacity() == 0){
-        return nullptr;
-    }
-    return static_cast<Dtype_p>(_buf->get_data_mutable()) + start_index() + index;
-}
 
-#ifdef USE_BM
+
 /**
  * \brief Constructor with allocated data ptr and entire memory shape. only for BM
 */
 template <>
-Tensor<BM,AK_BM, NCHW>::Tensor(Dtype_p data_ptr, TargetType_t target, int id, Shape shape) {
+template <typename TargetType_t>
+Tensor<BM,AK_FLOAT, NCHW>::Tensor(Dtype*  data_ptr, TargetType_t target, int id, Shape shape) {
     CHECK_EQ(shape.dims(), TensorAPI::layout_dims::value) << \
         "shape dims is not matched to layout type";
     _shape = shape;
@@ -153,84 +143,16 @@ Tensor<BM,AK_BM, NCHW>::Tensor(Dtype_p data_ptr, TargetType_t target, int id, Sh
     _offset = Shape::zero(shape.dims());
 
     std::shared_ptr<Buffer<TargetType_t>> buf_from_date = \
-        std::make_shared<Buffer<TargetType_t>>(&bm_mem_from_system(const_cast<Dtype_p>(data_ptr)), shape.count() * _type_len, id);
+        std::make_shared<Buffer<TargetType_t>>(&bm_mem_from_system(const_cast<void*>(data_ptr)), shape.count() * _type_len, id);
 
     BufferMemShare(_buf, buf_from_date);
 
     _is_subbuf = false;
 }
-#endif
-
-#ifdef USE_BM
-
-#ifndef BM_TENSOR_COPY
-#define BM_TENSOR_COPY
-
-template<>
-template<> inline
-SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<X86, AK_FLOAT, NCHW>(const Tensor<X86, AK_FLOAT, NCHW>& tensor) {
-            LOG(INFO) << "BM copy_from X86";
-            CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
-
-    auto* device_data_ptr = mutable_data();
-    BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(const_cast<float *>(tensor.data()))));
-    return SaberSuccess;
-}
-
-template<>
-template<> inline
-SaberStatus Tensor<X86, AK_FLOAT, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
-            LOG(INFO) << "X86 copy_from BM";
-            CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
-
-    auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
-    BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
-    return SaberSuccess;
-}
-
-/*
+INSTANTIATE_TENSOR(BM, AK_FLOAT, NCHW);
 
 
-    template<>
-    template<> inline
-    SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<X86, AK_FLOAT, NCHW>(const Tensor<X86, AK_FLOAT, NCHW>& tensor) {
-        LOG(INFO) << "BM copy_from X86";
-        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
 
-        auto* device_data_ptr = mutable_data();
-        BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *device_data_ptr, bm_mem_from_system(const_cast<float *>(tensor.data()))));
-        //BMDNN_CHECK(bm_memcpy_s2d(get_bm_handle(), *(bm_device_mem_t *)(mutable_data()), bm_mem_from_system(tensor.data())));
-        return SaberSuccess;
-    }
-
-    template<>
-    template<> inline
-    SaberStatus Tensor<X86, AK_FLOAT, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
-        LOG(INFO) << "X86 copy_from BM";
-        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
-
-        auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
-        BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
-        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *(bm_device_mem_t *)(tensor.data())));
-        return SaberSuccess;
-    }
-
-    template<>
-    template<> inline
-    SaberStatus Tensor<BM, AK_BM, NCHW>::copy_from<BM, AK_BM, NCHW>(const Tensor<BM, AK_BM, NCHW>& tensor) {
-        LOG(INFO) << "BM copy_from BM";
-        CHECK_EQ(valid_size(), tensor.valid_size()) << "sizes of two valid shapes must be the same";
-
-        auto* device_data_ptr = const_cast<bm_device_mem_t *>(tensor.data());
-        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *device_data_ptr));
-        //BMDNN_CHECK(bm_memcpy_d2s(get_bm_handle(), bm_mem_from_system(mutable_data()), *(bm_device_mem_t *)(tensor.data())));
-        return SaberSuccess;
-    }
-*/
-
-#endif
-
-#endif
 
 template struct Env<BM>;
 

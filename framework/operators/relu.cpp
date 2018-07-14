@@ -65,6 +65,12 @@ template class ReLUHelper<ARM, AK_FLOAT, Precision::FP32>;
 ANAKIN_REGISTER_OP_HELPER(ReLU, ReLUHelper, ARM, AK_FLOAT, Precision::FP32);
 #endif//arm
 
+#ifdef USE_BM
+INSTANCE_RELU(BM, AK_FLOAT, Precision::FP32);
+template class ReLUHelper<BM, AK_FLOAT, Precision::FP32>;
+ANAKIN_REGISTER_OP_HELPER(ReLU, ReLUHelper, BM, AK_FLOAT, Precision::FP32);
+#endif
+
 //! register op
 ANAKIN_REGISTER_OP(ReLU)
 .Doc("ReLU operator")
@@ -76,6 +82,9 @@ ANAKIN_REGISTER_OP(ReLU)
 #endif
 #ifdef USE_X86_PLACE
 .__alias__<X86, AK_FLOAT, Precision::FP32>("Relu")
+#endif
+#ifdef USE_BM
+.__alias__<BM, AK_FLOAT, Precision::FP32>("Relu")
 #endif
 .num_in(1)
 .num_out(1)

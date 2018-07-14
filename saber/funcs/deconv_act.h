@@ -25,10 +25,16 @@
 #ifdef USE_X86_PLACE
 #include "saber/funcs/impl/impl_deconv_act.h"
 #endif
+
 #ifdef USE_ARM_PLACE
 //todo
 #include "saber/funcs/impl/impl_deconv_act.h"
 #endif
+
+#ifdef USE_BM
+#include "saber/funcs/impl/impl_deconv_act.h"
+#endif
+
 namespace anakin {
 namespace saber {
 

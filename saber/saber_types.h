@@ -90,7 +90,6 @@ enum DataType {
     AK_BOOL         =       11,
     AK_SHAPE        =       12,
     AK_TENSOR       =       13,
-    AK_BM           =       14
 };
 
 typedef enum {

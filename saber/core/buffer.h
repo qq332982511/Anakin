@@ -16,6 +16,8 @@
 #ifndef ANAKIN_SABER_CORE_BUFFER_H
 #define ANAKIN_SABER_CORE_BUFFER_H
 #include "core/target_wrapper.h"
+#include "saber_types.h"
+#include "data_traits.h"
 namespace anakin{
 
 namespace saber{
@@ -27,6 +29,7 @@ namespace saber{
 template <typename TargetType>
 class Buffer {
 public:
+    typedef typename PtrTrait<TargetType>::PtrType TPtr;
     typedef TargetWrapper<TargetType> API;
     //typedef typename TargetTypeTraits<TargetType>::target_type target_type;
 
@@ -43,7 +46,7 @@ public:
         _id = API::get_device_id();
     }
 
-    explicit Buffer(void* data, size_t size, int id)
+    explicit Buffer(TPtr data, size_t size, int id)
     	: _own_data(false), _count(size), _capacity(size){
         _data = data;
         _id = API::get_device_id();
@@ -186,12 +189,12 @@ public:
     /**
      * \brief return const data pointer
      */
-    const void* get_data(){return _data;}
+    const TPtr get_data(){return _data;}
 
     /**
      * \brief return mutable data pointer
      */
-    void* get_data_mutable(){return _data;}
+    TPtr get_data_mutable(){return _data;}
 
     /**
      * \brief return current size of memory, in size
@@ -206,7 +209,7 @@ public:
 private:
     //! \brief device id where data allocated
     int _id;
-    void* _data;
+    TPtr _data;
     bool _own_data;
     size_t _count;
     size_t _capacity;
