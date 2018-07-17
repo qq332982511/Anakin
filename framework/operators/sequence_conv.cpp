@@ -139,9 +139,6 @@ ANAKIN_REGISTER_OP(SequenceConv)
 #ifdef USE_ARM_PLACE
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("SequenceConv")
 #endif
-#ifdef USE_BM
-.__alias__<BM, AK_FLOAT, Precision::FP32>("SequenceConv")
-#endif
 .num_in(1)
 .num_out(1)
 .Args<int>("axis", " axis ");

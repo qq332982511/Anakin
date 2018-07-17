@@ -104,7 +104,7 @@ ANAKIN_REGISTER_OP(BatchNorm)
 .__alias__<ARM, AK_FLOAT, Precision::FP32>("eps")
 #endif
 #ifdef USE_BM
-.__alias__<ARM, AK_FLOAT, Precision::FP32>("eps")
+.__alias__<BM, AK_FLOAT, Precision::FP32>("eps")
 #endif
 .num_in(1)
 .num_out(1);
