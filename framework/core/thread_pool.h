@@ -27,6 +27,15 @@
 #include "framework/core/type_traits_extend.h"
 #include "utils/logger/logger.h"
 
+#ifdef USE_X86_PLACE
+#include <mkl_service.h>
+
+#ifdef USE_OPENMP
+#include "omp.h"
+#endif
+
+#endif
+
 namespace anakin {
 
 class ThreadPool {
@@ -44,8 +53,14 @@ public:
         for(size_t i = 0; i<_num_thread; ++i) {
             _workers.emplace_back(
                     [i ,this]() {
+
                         // initial
                         this->init();
+#ifdef USE_OPENMP
+                        omp_set_dynamic(0);
+                        omp_set_num_threads(1);
+#endif
+                        mkl_set_num_threads(1);
                         for(;;) {
                             std::function<void(void)> task;
                             {

@@ -32,7 +32,7 @@ std::string FLAGS_model_dir;
 std::string FLAGS_model_file;
 int FLAGS_num = 1;
 int FLAGS_warmup_iter = 1;
-int FLAGS_epoch = 2000;
+int FLAGS_epoch = 10000;
 #endif
 
 void getModels(std::string path, std::vector<std::string>& files) {
@@ -53,7 +53,8 @@ void getModels(std::string path, std::vector<std::string>& files) {
     }
     closedir(dir);
 }
-TEST(NetTest, net_execute_base_test) {
+
+TEST(NetTest, net_execute_worker_test){
 #ifdef USE_OPENMP
     omp_set_dynamic(0);
     omp_set_num_threads(1);
@@ -65,140 +66,221 @@ TEST(NetTest, net_execute_base_test) {
     } else {
         models.push_back(FLAGS_model_dir + FLAGS_model_file);
     }
+
     for (auto iter = models.begin(); iter < models.end(); iter++)
     {
-                LOG(WARNING) << "load anakin model file from " << *iter << " ...";
+
         Graph<Target, AK_FLOAT, Precision::FP32> graph;
         auto status = graph.load(*iter);
         if (!status) {
-                    LOG(FATAL) << " [ERROR] " << status.info();
+            LOG(FATAL) << " [ERROR] " << status.info();
         }
-
-                LOG(INFO) << "optimize the graph";
         graph.Optimize();
+        Net<Target, AK_FLOAT, Precision::FP32> net_executer(graph, true);
 
-        //! get output name
         std::vector<std::string>& vin_name = graph.get_ins();
-                LOG(INFO) << "input size: " << vin_name.size();
-                LOG(INFO) << "set batchsize to " << FLAGS_num;
+
         for (int j = 0; j < vin_name.size(); ++j) {
-                    LOG(INFO) << "input name: " << vin_name[j];
-            graph.ResetBatchSize(vin_name[j], FLAGS_num);
+            LOG(INFO) << "input name: " << vin_name[j];
+//            graph.ResetBatchSize(vin_name[j], FLAGS_num);
         }
         //! get output name
         std::vector<std::string>& vout_name = graph.get_outs();
-                LOG(INFO) << "output size: " << vout_name.size();
+        LOG(INFO) << "output size: " << vout_name.size();
         for (int j = 0; j < vout_name.size(); ++j) {
-                    LOG(INFO) << "output name: " << vout_name[j];
+            LOG(INFO) << "output name: " << vout_name[j];
         }
 
-        // constructs the executer net
-                LOG(INFO) << "create net to execute";
-        Net<Target, AK_FLOAT, Precision::FP32> net_executer(graph, true);//, OpRunType::SYNC
-        // get in
-                LOG(INFO) << "get input";
+        Worker<X86, AK_FLOAT, Precision::FP32>  workers(*iter, 2);
+        workers.register_inputs(vin_name);
+        workers.register_outputs(vout_name);
+        workers.launch();
+        std::vector<Tensor<Target, AK_FLOAT>*> inputs;
         for (int j = 0; j < vin_name.size(); ++j) {
-            Tensor<Target, AK_FLOAT>* d_tensor_in_p = net_executer.get_in(vin_name[j]);
-            Tensor4d<Target_H, AK_FLOAT> h_tensor_in;
-            auto valid_shape_in = d_tensor_in_p->valid_shape();
-                    LOG(INFO) << "input name: " << vin_name[j];
-            for (int i = 0; i < valid_shape_in.size(); i++) {
-                        LOG(INFO) << "detect input dims[" << i << "]" << valid_shape_in[i];
-            }
-            //h_tensor_in.re_alloc(valid_shape_in);
-            //fill_tensor_host_rand(h_tensor_in, -1.0f,1.0f);
-            //d_tensor_in_p->copy_from(h_tensor_in);
-            fill_tensor_host_const(*d_tensor_in_p, 1.f);
+            Tensor<Target, AK_FLOAT> *d_tensor_in_p = net_executer.get_in(vin_name[j]);
+            Tensor<Target, AK_FLOAT> *tensor_in=new Tensor<Target ,AK_FLOAT>(d_tensor_in_p->valid_shape());
+            fill_tensor_host_const(*tensor_in,1.f);
+            inputs.push_back(tensor_in);
         }
-
-        // do inference
+//        for(int i=0;i<100;i++) {
+//            auto  d_tensor_p_out_list=workers.sync_prediction(inputs);
+//            Tensor<Target, AK_FLOAT>* out=d_tensor_p_out_list[0];
+//            LOG(INFO)<<"out = "<<out->data()[0];
+//        }
         Context<Target> ctx(0, 0, 0);
         saber::SaberTimer<Target> my_time;
-                LOG(WARNING) << "EXECUTER !!!!!!!! ";
-        for (int i = 0; i < FLAGS_warmup_iter; i++) {
-            for (int j = 0; j < vin_name.size(); ++j) {
-                auto d_tensor_in_p = net_executer.get_in(vin_name[j]);
-                fill_tensor_host_const(*d_tensor_in_p, 1.f);
-            }
-            net_executer.prediction();
-        }
-#ifdef ENABLE_OP_TIMER
-        net_executer.reset_op_time();
-#endif
         my_time.start(ctx);
-        //auto start = std::chrono::system_clock::now();
-        for (int i = 0; i < FLAGS_epoch; i++) {
-            //DLOG(ERROR) << " epoch(" << i << "/" << epoch << ") ";
-            for (int j = 0; j < vin_name.size(); ++j) {
-                auto d_tensor_in_p = net_executer.get_in(vin_name[j]);
-                fill_tensor_host_const(*d_tensor_in_p, 1.f);
-            }
 
-            net_executer.prediction();
 
-#define LOG_OUTPUT
-#ifdef LOG_OUTPUT
-            std::vector<Tensor4d<Target, AK_FLOAT>*> vout;
-            for (auto& it : vout_name) {
-                vout.push_back(net_executer.get_out(it));
+        // Running
+        for(int i=0; i<FLAGS_epoch; i++) {
+            workers.async_prediction(inputs);
+        }
+        int iterator = FLAGS_epoch;
+        while(iterator) {
+            if(!workers.empty()) {
+                auto d_tensor_p = workers.async_get_result();
+                Tensor<Target, AK_FLOAT>* out=d_tensor_p[0];
+                CHECK(abs(out->data()[0]-0.5280559)<0.0001)<<"CHECK result "<<out->data()[0]<<" != "<<0.5280559;
+                iterator--;
             }
-            Tensor4d<Target, AK_FLOAT>* tensor_out = vout[0];
-                    LOG(INFO) << "output size: " << vout.size();
-
-                    LOG(INFO) << "extract data: size: " << tensor_out->valid_size() << \
-            ", width=" << tensor_out->width() << ", height=" << tensor_out->height();
-            Tensor4d<Target_H, AK_FLOAT> out_h;
-            out_h.re_alloc(tensor_out->valid_shape());
-            out_h.copy_from(*tensor_out);
-            const float* ptr_out = out_h.data();
-            double mean_val = 0.0;
-            bool flag_pass = true;
-            for (int j = 0; j < tensor_out->valid_size(); j++) {
-                if (fabs(ptr_out[j] - 0.708581f) > 1e-5f) {
-                    flag_pass = false;
-                }
-                printf("out = %.8f ", ptr_out[j]);
-                mean_val += ptr_out[j];
-                if ((j + 1) % 10 == 0) {
-                    printf("\n");
-                }
-            }
-            printf("\n");
-            if (!flag_pass) {
-                        LOG(FATAL) << "error in loop " << i;
-            }
-                    LOG(INFO) << "output mean val: " << mean_val / tensor_out->valid_size();
-#endif
         }
         my_time.end(ctx);
 
-#ifdef ENABLE_OP_TIMER
-        std::vector<float> op_time = net_executer.get_op_time();
-        auto exec_funcs = net_executer.get_exec_funcs();
-        auto op_param = net_executer.get_op_param();
-        for (int i = 0; i <  op_time.size(); i++) {
-            LOG(INFO) << "name: " << exec_funcs[i].name << " op_type: " << exec_funcs[i].op_name << " op_param: " << op_param[i] << " time " << op_time[i]/FLAGS_epoch;
-        }
-        std::map<std::string, float> op_map;
-        for (int i = 0; i < op_time.size(); i++) {
-            auto it = op_map.find(op_param[i]);
-            if (it != op_map.end())
-                op_map[op_param[i]] += op_time[i];
-            else
-                op_map.insert(std::pair<std::string, float>(op_param[i], op_time[i]));
-        }
-        for (auto it = op_map.begin(); it != op_map.end(); ++it) {
-            LOG(INFO)<< it->first << "  " << (it->second) / FLAGS_epoch<< " ms";
-        }
-#endif
         size_t end = (*iter).find(".anakin.bin");
         size_t start = FLAGS_model_dir.length();
         std::string model_name = (*iter).substr(start, end-start);
         LOG(INFO) << model_name << " batch_size " << FLAGS_num << " average time "<< my_time.get_average_ms() / FLAGS_epoch << " ms";
-
-        auto status1 = graph.save("map.anakin.bin");
     }
 }
+//
+//TEST(NetTest, net_execute_base_test) {
+//#ifdef USE_OPENMP
+//    omp_set_dynamic(0);
+//    omp_set_num_threads(1);
+//#endif
+//    mkl_set_num_threads(1);
+//    std::vector<std::string> models;
+//    if (FLAGS_model_file == "") {
+//        getModels(FLAGS_model_dir, models);
+//    } else {
+//        models.push_back(FLAGS_model_dir + FLAGS_model_file);
+//    }
+//    for (auto iter = models.begin(); iter < models.end(); iter++)
+//    {
+//                LOG(WARNING) << "load anakin model file from " << *iter << " ...";
+//        Graph<Target, AK_FLOAT, Precision::FP32> graph;
+//        auto status = graph.load(*iter);
+//        if (!status) {
+//                    LOG(FATAL) << " [ERROR] " << status.info();
+//        }
+//
+//                LOG(INFO) << "optimize the graph";
+//        graph.Optimize();
+//
+//        //! get output name
+//        std::vector<std::string>& vin_name = graph.get_ins();
+//                LOG(INFO) << "input size: " << vin_name.size();
+//                LOG(INFO) << "set batchsize to " << FLAGS_num;
+//        for (int j = 0; j < vin_name.size(); ++j) {
+//                    LOG(INFO) << "input name: " << vin_name[j];
+//            graph.ResetBatchSize(vin_name[j], FLAGS_num);
+//        }
+//        //! get output name
+//        std::vector<std::string>& vout_name = graph.get_outs();
+//                LOG(INFO) << "output size: " << vout_name.size();
+//        for (int j = 0; j < vout_name.size(); ++j) {
+//                    LOG(INFO) << "output name: " << vout_name[j];
+//        }
+//
+//        // constructs the executer net
+//                LOG(INFO) << "create net to execute";
+//        Net<Target, AK_FLOAT, Precision::FP32> net_executer(graph, true);//, OpRunType::SYNC
+//        // get in
+//                LOG(INFO) << "get input";
+//        for (int j = 0; j < vin_name.size(); ++j) {
+//            Tensor<Target, AK_FLOAT>* d_tensor_in_p = net_executer.get_in(vin_name[j]);
+//            Tensor4d<Target_H, AK_FLOAT> h_tensor_in;
+//            auto valid_shape_in = d_tensor_in_p->valid_shape();
+//                    LOG(INFO) << "input name: " << vin_name[j];
+//            for (int i = 0; i < valid_shape_in.size(); i++) {
+//                        LOG(INFO) << "detect input dims[" << i << "]" << valid_shape_in[i];
+//            }
+//            //h_tensor_in.re_alloc(valid_shape_in);
+//            //fill_tensor_host_rand(h_tensor_in, -1.0f,1.0f);
+//            //d_tensor_in_p->copy_from(h_tensor_in);
+//            fill_tensor_host_const(*d_tensor_in_p, 1.f);
+//        }
+//
+//        // do inference
+//        Context<Target> ctx(0, 0, 0);
+//        saber::SaberTimer<Target> my_time;
+//                LOG(WARNING) << "EXECUTER !!!!!!!! ";
+//        for (int i = 0; i < FLAGS_warmup_iter; i++) {
+//            for (int j = 0; j < vin_name.size(); ++j) {
+//                auto d_tensor_in_p = net_executer.get_in(vin_name[j]);
+//                fill_tensor_host_const(*d_tensor_in_p, 1.f);
+//            }
+//            net_executer.prediction();
+//        }
+//#ifdef ENABLE_OP_TIMER
+//        net_executer.reset_op_time();
+//#endif
+//        my_time.start(ctx);
+//        //auto start = std::chrono::system_clock::now();
+//        for (int i = 0; i < FLAGS_epoch; i++) {
+//            //DLOG(ERROR) << " epoch(" << i << "/" << epoch << ") ";
+//            for (int j = 0; j < vin_name.size(); ++j) {
+//                auto d_tensor_in_p = net_executer.get_in(vin_name[j]);
+//                fill_tensor_host_const(*d_tensor_in_p, 1.f);
+//            }
+//
+//            net_executer.prediction();
+//
+//#define LOG_OUTPUT
+//#ifdef LOG_OUTPUT
+//            std::vector<Tensor4d<Target, AK_FLOAT>*> vout;
+//            for (auto& it : vout_name) {
+//                vout.push_back(net_executer.get_out(it));
+//            }
+//            Tensor4d<Target, AK_FLOAT>* tensor_out = vout[0];
+//                    LOG(INFO) << "output size: " << vout.size();
+//
+//                    LOG(INFO) << "extract data: size: " << tensor_out->valid_size() << \
+//            ", width=" << tensor_out->width() << ", height=" << tensor_out->height();
+//            Tensor4d<Target_H, AK_FLOAT> out_h;
+//            out_h.re_alloc(tensor_out->valid_shape());
+//            out_h.copy_from(*tensor_out);
+//            const float* ptr_out = out_h.data();
+//            double mean_val = 0.0;
+//            bool flag_pass = true;
+//            for (int j = 0; j < tensor_out->valid_size(); j++) {
+//                if (fabs(ptr_out[j] - 0.708581f) > 1e-5f) {
+//                    flag_pass = false;
+//                }
+//                printf("out = %.8f ", ptr_out[j]);
+//                mean_val += ptr_out[j];
+//                if ((j + 1) % 10 == 0) {
+//                    printf("\n");
+//                }
+//            }
+//            printf("\n");
+//            if (!flag_pass) {
+//                        LOG(FATAL) << "error in loop " << i;
+//            }
+//                    LOG(INFO) << "output mean val: " << mean_val / tensor_out->valid_size();
+//#endif
+//        }
+//        my_time.end(ctx);
+//
+//#ifdef ENABLE_OP_TIMER
+//        std::vector<float> op_time = net_executer.get_op_time();
+//        auto exec_funcs = net_executer.get_exec_funcs();
+//        auto op_param = net_executer.get_op_param();
+//        for (int i = 0; i <  op_time.size(); i++) {
+//            LOG(INFO) << "name: " << exec_funcs[i].name << " op_type: " << exec_funcs[i].op_name << " op_param: " << op_param[i] << " time " << op_time[i]/FLAGS_epoch;
+//        }
+//        std::map<std::string, float> op_map;
+//        for (int i = 0; i < op_time.size(); i++) {
+//            auto it = op_map.find(op_param[i]);
+//            if (it != op_map.end())
+//                op_map[op_param[i]] += op_time[i];
+//            else
+//                op_map.insert(std::pair<std::string, float>(op_param[i], op_time[i]));
+//        }
+//        for (auto it = op_map.begin(); it != op_map.end(); ++it) {
+//            LOG(INFO)<< it->first << "  " << (it->second) / FLAGS_epoch<< " ms";
+//        }
+//#endif
+//        size_t end = (*iter).find(".anakin.bin");
+//        size_t start = FLAGS_model_dir.length();
+//        std::string model_name = (*iter).substr(start, end-start);
+//        LOG(INFO) << model_name << " batch_size " << FLAGS_num << " average time "<< my_time.get_average_ms() / FLAGS_epoch << " ms";
+//
+//        auto status1 = graph.save("map.anakin.bin");
+//    }
+//}
+
 int main(int argc, const char** argv){
 
     //Env<Target>::env_init();
