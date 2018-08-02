@@ -33,6 +33,7 @@ DEFINE_int32(num, 1, "batchSize");
 DEFINE_int32(warmup_iter, 10, "warm up iterations");
 DEFINE_int32(epoch, 1000, "time statistic epoch");
 DEFINE_int32(batch_size, 1, "seq num");
+DEFINE_int32(thread_num, 1, "thread_num");
 #else
 std::string FLAGS_model_dir;
 std::string FLAGS_model_file;
@@ -40,6 +41,7 @@ int FLAGS_num = 1;
 int FLAGS_warmup_iter = 10;
 int FLAGS_epoch = 1000;
 int FLAGS_batch_size = 1;
+int FLAGS_thread_num = 1;
 #endif
 
 std::vector<std::string> string_split(std::string in_str, std::string delimiter) {
@@ -192,82 +194,92 @@ void getModels(std::string path, std::vector<std::string>& files) {
 
     closedir(dir);
 }
-#define  RUN_IN_WORKER
-#ifdef RUN_IN_WORKER
-void consumer_task(Worker<Target , AK_FLOAT, Precision::FP32> *workers){
-    LOG(INFO)<<"hello_world";
-    int iterator = 88656;
-    int count=0;
-    while(iterator) {
-        if(!workers->empty()) {
-            LOG(INFO)<<"hello_world2";
-            auto d_tensor_p = workers->async_get_result();
-            LOG(INFO)<<"consumer "<<count;
-            count++;
-            Tensor<Target, AK_FLOAT>* out=d_tensor_p[0];
-            iterator--;
-        }
-    }
-    LOG(INFO)<<"bye_world";
-}
-TEST(NetTest, net_execute_base_test_worker) {
-    std::vector<std::string> models;
+void one_thread_run(std::string path,int thread_id){
+#ifdef USE_OPENMP
+    omp_set_dynamic(0);
+    omp_set_num_threads(1);
+#endif
+#ifdef USE_X86_PLACE
+    mkl_set_num_threads(1);
+#endif
 
-    if (FLAGS_model_file == "") {
-        getModels(FLAGS_model_dir, models);
-    } else {
-        models.push_back(FLAGS_model_dir + FLAGS_model_file);
+    LOG(WARNING) << "load anakin model file from " << path << " ...";
+    Graph<Target, AK_FLOAT, Precision::FP32> graph;
+    auto status = graph.load(path);
+
+    if (!status) {
+                LOG(FATAL) << " [ERROR] " << status.info();
     }
 
-    for (auto iter = models.begin(); iter < models.end(); iter++) {
-        Worker<Target , AK_FLOAT, Precision::FP32>  workers(*iter, 1);
-        Graph<Target, AK_FLOAT, Precision::FP32> graph;
-        auto status = graph.load(*iter);
-        if (!status) {
-            LOG(FATAL) << " [ERROR] " << status.info();
+            LOG(INFO) << "set batchsize to " << FLAGS_num;
+    graph.ResetBatchSize("input_0", FLAGS_num);
+    graph.ResetBatchSize("input_4", FLAGS_num);
+    graph.ResetBatchSize("input_5", FLAGS_num);
+    //graph.RegistOut("patch_0_stage1_unit2_conv1",  "patch_0_stage1_unit2_bn2");
+            LOG(INFO) << "optimize the graph";
+    graph.Optimize();
+    // constructs the executer net
+            LOG(INFO) << "create net to execute";
+    Net<Target, AK_FLOAT, Precision::FP32> net_executer(graph, true);
+    // get in
+            LOG(INFO) << "get input";
+
+    auto h_tensor_in_0 = net_executer.get_in("input_0");
+    auto h_tensor_in_1 = net_executer.get_in("input_4");
+    auto h_tensor_in_2 = net_executer.get_in("input_5");
+
+    bool is_rand = false;
+    std::string data_path = "./test_features_sys";
+    Data  map_data(data_path, FLAGS_batch_size);
+    Context<Target> ctx(0, 0, 0);
+    saber::SaberTimer<Target> my_time;
+
+
+    std::vector<std::vector<float>> fea;
+    std::vector<std::vector<float>> week_fea;
+    std::vector<std::vector<float>> time_fea;
+    std::vector<int> seq_offset;
+    my_time.start(ctx);
+    int batch_id = 0;
+
+    while (true) {
+        seq_offset.clear();
+        map_data.get_batch_data(fea, week_fea, time_fea, seq_offset);
+
+        if (seq_offset.size() <= 1) {
+            break;
         }
-        std::vector<std::string>& vout_name = graph.get_outs();
-        std::vector<std::string> input_names={"input_0","input_4","input_5"};
-        workers.register_inputs(input_names);
-        workers.register_outputs(vout_name);
-        /*.Reshape("input_0", {FLAGS_num, 38, 1, 1});
-        workers.Reshape("input_4", {FLAGS_num, 10, 1, 1});
-        workers.Reshape("input_5", {FLAGS_num, 10, 1, 1});*/
-        workers.launch();
 
-        auto h_tensor_in_0 = new Tensor<Target_H,AK_FLOAT>(Shape(FLAGS_num, 38, 1, 1));
-        auto h_tensor_in_1 = new Tensor<Target_H,AK_FLOAT>(Shape(FLAGS_num, 10, 1, 1));
-        auto h_tensor_in_2 = new Tensor<Target_H,AK_FLOAT>(Shape(FLAGS_num, 10, 1, 1));
+        h_tensor_in_0->reshape(Shape(fea.size(), 38, 1, 1));
+        h_tensor_in_1->reshape(Shape(week_fea.size(), 10, 1, 1));
+        h_tensor_in_2->reshape(Shape(time_fea.size(), 10, 1, 1));
+        h_tensor_in_0->set_seq_offset(seq_offset);
+#ifdef USE_CUDA
+        Tensor4d<Target_H, AK_FLOAT> h_tensor_0;
+        Tensor4d<Target_H, AK_FLOAT> h_tensor_1;
+        Tensor4d<Target_H, AK_FLOAT> h_tensor_2;
+        h_tensor_0.reshape(h_tensor_in_0->valid_shape());
+        h_tensor_1.reshape(h_tensor_in_1->valid_shape());
+        h_tensor_2.reshape(h_tensor_in_2->valid_shape());
 
-        LOG(INFO)<<"init batchsize = "<<FLAGS_num;
-        std::vector<Tensor<Target_H, AK_FLOAT>*> inputs={h_tensor_in_0,h_tensor_in_1,h_tensor_in_2};
+        for (int i = 0; i < fea.size(); i++) {
+            memcpy(h_tensor_0.mutable_data() + i * 38, &fea[i][0], sizeof(float) * 38);
+        }
 
-        std::string data_path = "./test_features_sys";
-        Data  map_data(data_path, FLAGS_batch_size);
-        Context<Target> ctx(0, 0, 0);
-        saber::SaberTimer<Target> my_time;
-        std::vector<std::vector<float>> fea;
-        std::vector<std::vector<float>> week_fea;
-        std::vector<std::vector<float>> time_fea;
-        std::vector<int> seq_offset;
-        my_time.start(ctx);
-        int batch_id = 0;
-        std::thread* consumer=new std::thread(&consumer_task,&workers);
-        while (true) {
-            LOG(INFO) << batch_id++;
-            seq_offset.clear();
-            map_data.get_batch_data(fea, week_fea, time_fea, seq_offset);
+        for (int i = 0; i < week_fea.size(); i++) {
+            memcpy(h_tensor_1.mutable_data() + i * 10, &week_fea[i][0], sizeof(float) * 10);
+        }
 
-            if (seq_offset.size() <= 1) {
-                break;
-            }
+        for (int i = 0; i < time_fea.size(); i++) {
+            memcpy(h_tensor_2.mutable_data() + i * 10, &time_fea[i][0], sizeof(float) * 10);
+        }
 
-            /*h_tensor_in_0->reshape(Shape(fea.size(), 38, 1, 1));
-            h_tensor_in_1->reshape(Shape(week_fea.size(), 10, 1, 1));
-            h_tensor_in_2->reshape(Shape(time_fea.size(), 10, 1, 1));
-            h_tensor_in_0->set_seq_offset(seq_offset);
+        h_tensor_in_0->copy_from(h_tensor_0);
+        h_tensor_in_1->copy_from(h_tensor_1);
+        h_tensor_in_2->copy_from(h_tensor_2);
+#else
 
-            for (int i = 0; i < fea.size(); i++) {
+        for (int i = 0; i < fea.size(); i++) {
                 memcpy(h_tensor_in_0->mutable_data() + i * 38, &fea[i][0], sizeof(float) * 38);
             }
 
@@ -277,33 +289,178 @@ TEST(NetTest, net_execute_base_test_worker) {
 
             for (int i = 0; i < time_fea.size(); i++) {
                 memcpy(h_tensor_in_2->mutable_data() + i * 10, &time_fea[i][0], sizeof(float) * 10);
-            }*/
+            }
 
-//            workers.sync_prediction(inputs);
-            workers.async_prediction(inputs);
+#endif
 
-        }
-        consumer->join();
-        LOG(INFO) << "batch_id = " <<batch_id;
+        net_executer.prediction();
+        batch_id++;
+#ifdef USE_CUDA
+        cudaDeviceSynchronize();
+        auto out = net_executer.get_out("final_output.tmp_1_gout");
+        //print_tensor_device(*out);
 
-
-
-        my_time.end(ctx);
-
-        size_t end = (*iter).find(".anakin.bin");
-        size_t start = FLAGS_model_dir.length();
-        std::string model_name = (*iter).substr(start, end - start);
-
-        LOG(INFO) << model_name << " batch_size " << FLAGS_num << " average time " <<
-                  my_time.get_average_ms() / FLAGS_epoch << " ms";
-        std::string save_model_path = *iter + std::string(".saved");
-        status = graph.save(save_model_path);
-
-        if (!status) {
-            LOG(FATAL) << " [ERROR] " << status.info();
-        }
+        cudaDeviceSynchronize();
+#endif
+        //break;
     }
+
+    my_time.end(ctx);
+
+
+    size_t end = (path).find(".anakin.bin");
+    size_t start = FLAGS_model_dir.length();
+    std::string model_name = (path).substr(start, end - start);
+    float time_ms=my_time.get_average_ms();
+    LOG(INFO)<<"[result]: thread_id = "<<thread_id<<"," << model_name << " batch_size " << FLAGS_num
+             << " avg time " <<time_ms/ batch_id << " ms"<<", total time = "<<time_ms;
+
 }
+
+TEST(NetTest, net_execute_base_test) {
+    std::vector<std::string> models;
+    Env<X86>::env_init();
+
+    if (FLAGS_model_file == "") {
+        getModels(FLAGS_model_dir, models);
+    } else {
+        models.push_back(FLAGS_model_dir + FLAGS_model_file);
+    }
+
+    for (auto iter = models.begin(); iter < models.end(); iter++) {
+        Context<X86> ctx(0,0,1);
+        SaberTimer<X86> timer;
+        timer.start(ctx);
+        std::vector<std::unique_ptr<std::thread>> threads;
+        for(int thread_id=0;thread_id<FLAGS_thread_num;thread_id++){
+            threads.emplace_back(new std::thread(&one_thread_run,*iter,thread_id));
+        }
+        for (int i = 0; i < FLAGS_thread_num; ++i) {
+            threads[i]->join();
+        }
+        timer.end(ctx);
+        float time_consume=timer.get_average_ms();
+        LOG(INFO) <<"[result]: totol time = "<<time_consume<<" ms, QPS = "<<FLAGS_num*FLAGS_thread_num/time_consume*1000;
+        LOG(WARNING) << "load anakin model file from " << *iter << " ...";
+    }
+
+}
+
+
+
+
+#define  RUN_IN_WORKER
+#ifdef RUN_IN_WORKER
+//void consumer_task(Worker<Target , AK_FLOAT, Precision::FP32> *workers){
+//    LOG(INFO)<<"hello_world";
+//    int iterator = 88656;
+//    int count=0;
+//    while(iterator) {
+//        if(!workers->empty()) {
+//            LOG(INFO)<<"hello_world2";
+//            auto d_tensor_p = workers->async_get_result();
+//            LOG(INFO)<<"consumer "<<count;
+//            count++;
+//            Tensor<Target, AK_FLOAT>* out=d_tensor_p[0];
+//            iterator--;
+//        }
+//    }
+//    LOG(INFO)<<"bye_world";
+//}
+//TEST(NetTest, net_execute_base_test_worker) {
+//    std::vector<std::string> models;
+//
+//    if (FLAGS_model_file == "") {
+//        getModels(FLAGS_model_dir, models);
+//    } else {
+//        models.push_back(FLAGS_model_dir + FLAGS_model_file);
+//    }
+//
+//    for (auto iter = models.begin(); iter < models.end(); iter++) {
+//        Worker<Target , AK_FLOAT, Precision::FP32>  workers(*iter, 1);
+//        Graph<Target, AK_FLOAT, Precision::FP32> graph;
+//        auto status = graph.load(*iter);
+//        if (!status) {
+//            LOG(FATAL) << " [ERROR] " << status.info();
+//        }
+//        std::vector<std::string>& vout_name = graph.get_outs();
+//        std::vector<std::string> input_names={"input_0","input_4","input_5"};
+//        workers.register_inputs(input_names);
+//        workers.register_outputs(vout_name);
+//        /*.Reshape("input_0", {FLAGS_num, 38, 1, 1});
+//        workers.Reshape("input_4", {FLAGS_num, 10, 1, 1});
+//        workers.Reshape("input_5", {FLAGS_num, 10, 1, 1});*/
+//        workers.launch();
+//
+//        auto h_tensor_in_0 = new Tensor<Target_H,AK_FLOAT>(Shape(FLAGS_num, 38, 1, 1));
+//        auto h_tensor_in_1 = new Tensor<Target_H,AK_FLOAT>(Shape(FLAGS_num, 10, 1, 1));
+//        auto h_tensor_in_2 = new Tensor<Target_H,AK_FLOAT>(Shape(FLAGS_num, 10, 1, 1));
+//
+//        LOG(INFO)<<"init batchsize = "<<FLAGS_num;
+//        std::vector<Tensor<Target_H, AK_FLOAT>*> inputs={h_tensor_in_0,h_tensor_in_1,h_tensor_in_2};
+//
+//        std::string data_path = "./test_features_sys";
+//        Data  map_data(data_path, FLAGS_batch_size);
+//        Context<Target> ctx(0, 0, 0);
+//        saber::SaberTimer<Target> my_time;
+//        std::vector<std::vector<float>> fea;
+//        std::vector<std::vector<float>> week_fea;
+//        std::vector<std::vector<float>> time_fea;
+//        std::vector<int> seq_offset;
+//        my_time.start(ctx);
+//        int batch_id = 0;
+//        std::thread* consumer=new std::thread(&consumer_task,&workers);
+//        while (true) {
+//            LOG(INFO) << batch_id++;
+//            seq_offset.clear();
+//            map_data.get_batch_data(fea, week_fea, time_fea, seq_offset);
+//
+//            if (seq_offset.size() <= 1) {
+//                break;
+//            }
+//
+//            /*h_tensor_in_0->reshape(Shape(fea.size(), 38, 1, 1));
+//            h_tensor_in_1->reshape(Shape(week_fea.size(), 10, 1, 1));
+//            h_tensor_in_2->reshape(Shape(time_fea.size(), 10, 1, 1));
+//            h_tensor_in_0->set_seq_offset(seq_offset);
+//
+//            for (int i = 0; i < fea.size(); i++) {
+//                memcpy(h_tensor_in_0->mutable_data() + i * 38, &fea[i][0], sizeof(float) * 38);
+//            }
+//
+//            for (int i = 0; i < week_fea.size(); i++) {
+//                memcpy(h_tensor_in_1->mutable_data() + i * 10, &week_fea[i][0], sizeof(float) * 10);
+//            }
+//
+//            for (int i = 0; i < time_fea.size(); i++) {
+//                memcpy(h_tensor_in_2->mutable_data() + i * 10, &time_fea[i][0], sizeof(float) * 10);
+//            }*/
+//
+////            workers.sync_prediction(inputs);
+//            workers.async_prediction(inputs);
+//
+//        }
+//        consumer->join();
+//        LOG(INFO) << "batch_id = " <<batch_id;
+//
+//
+//
+//        my_time.end(ctx);
+//
+//        size_t end = (*iter).find(".anakin.bin");
+//        size_t start = FLAGS_model_dir.length();
+//        std::string model_name = (*iter).substr(start, end - start);
+//
+//        LOG(INFO) << model_name << " batch_size " << FLAGS_num << " average time " <<
+//                  my_time.get_average_ms() / FLAGS_epoch << " ms";
+//        std::string save_model_path = *iter + std::string(".saved");
+//        status = graph.save(save_model_path);
+//
+//        if (!status) {
+//            LOG(FATAL) << " [ERROR] " << status.info();
+//        }
+//    }
+//}
 
 #else
 TEST(NetTest, net_execute_base_test) {
@@ -562,6 +719,9 @@ int main(int argc, const char** argv) {
 
     if (argc > 6) {
         FLAGS_batch_size = atoi(argv[6]);
+    }
+    if (argc > 7) {
+        FLAGS_thread_num = atoi(argv[7]);
     }
 
 #endif
