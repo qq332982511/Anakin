@@ -156,7 +156,8 @@ void one_thread_run(std::string path,int thread_id){
     size_t end = (path).find(".anakin.bin");
     size_t start = FLAGS_model_dir.length();
     std::string model_name = (path).substr(start, end-start);
-    LOG(INFO) <<"[result]: thread_id = "<<thread_id<<","<< model_name << " batch_size " << FLAGS_num << " average time "<< my_time.get_average_ms() / FLAGS_epoch << " ms";
+    LOG(INFO) <<"[result]: thread_id = "<<thread_id<<","<< model_name << " batch_size " << FLAGS_num << " average time "<< my_time.get_average_ms() / FLAGS_epoch
+              << " ms , thread_num = "<<FLAGS_thread_num;
 
 }
 

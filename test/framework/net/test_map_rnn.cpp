@@ -211,7 +211,7 @@ void one_thread_run(std::string path,int thread_id){
                 LOG(FATAL) << " [ERROR] " << status.info();
     }
 
-            LOG(INFO) << "set batchsize to " << FLAGS_num;
+    LOG(INFO) << "set biggest batchsize to " << FLAGS_num;
     graph.ResetBatchSize("input_0", FLAGS_num);
     graph.ResetBatchSize("input_4", FLAGS_num);
     graph.ResetBatchSize("input_5", FLAGS_num);
@@ -222,7 +222,7 @@ void one_thread_run(std::string path,int thread_id){
             LOG(INFO) << "create net to execute";
     Net<Target, AK_FLOAT, Precision::FP32> net_executer(graph, true);
     // get in
-            LOG(INFO) << "get input";
+
 
     auto h_tensor_in_0 = net_executer.get_in("input_0");
     auto h_tensor_in_1 = net_executer.get_in("input_4");
@@ -312,7 +312,7 @@ void one_thread_run(std::string path,int thread_id){
     size_t start = FLAGS_model_dir.length();
     std::string model_name = (path).substr(start, end - start);
     float time_ms=my_time.get_average_ms();
-    LOG(INFO)<<"[result]: thread_id = "<<thread_id<<"," << model_name << " batch_size " << FLAGS_num
+    LOG(INFO)<<"[result]: thread_id = "<<thread_id<<"," << model_name << " batch_size " << FLAGS_batch_size
              << " avg time " <<time_ms/ batch_id << " ms"<<", total time = "<<time_ms;
 
 }
@@ -340,7 +340,8 @@ TEST(NetTest, net_execute_base_test) {
         }
         timer.end(ctx);
         float time_consume=timer.get_average_ms();
-        LOG(INFO) <<"[result]: totol time = "<<time_consume<<" ms, QPS = "<<FLAGS_num*FLAGS_thread_num/time_consume*1000;
+        LOG(INFO) <<"[result]: totol time = "<<time_consume<<" ms, QPS = "<<FLAGS_num*FLAGS_thread_num/time_consume*1000
+                  <<" , thread num = "<<FLAGS_thread_num;
         LOG(WARNING) << "load anakin model file from " << *iter << " ...";
     }
 
