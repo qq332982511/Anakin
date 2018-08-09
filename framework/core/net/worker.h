@@ -135,7 +135,7 @@ public:
      *  the return order of results from async_get_result is the same as the order of net_in_list called by async_prediction.
      *  \return the net inference result.
      */
-    std::vector<Tensor4dPtr<Ttype, Dtype> > async_get_result();
+    std::vector<Tensor4d<Ttype, Dtype> > async_get_result();
 
 public:
     /** 
@@ -175,7 +175,7 @@ private:
     std::vector<std::string> _outputs_in_order;
     ///< vector of edges in order.
     std::vector<graph::Arc<std::string, int>> _edges_in_order;
-    std::queue< std::future< std::vector<Tensor4dPtr<Ttype, Dtype> > > > _async_que GUARDED_BY(_async_que_mut);
+    std::queue< std::future< std::vector<Tensor4d<Ttype, Dtype> > > > _async_que GUARDED_BY(_async_que_mut);
     std::mutex _async_que_mut;    
     std::vector<std::function<void(void)> > _auxiliary_funcs;
     std::unordered_map<std::string, std::vector<int>> _in_shapes;

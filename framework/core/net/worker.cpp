@@ -10,42 +10,63 @@ struct NetGraphWrapper {
 
     void initial(std::string model_path, std::unordered_map<std::string, std::vector<int>>& shape_map) EXCLUSIVE_LOCKS_REQUIRED(this->_mut) {
         std::lock_guard<std::mutex> guard(this->_mut);
-        if(_graph_map.count(model_path) <= 0) {
-            // graph load is thread safe
-            _graph_map[model_path].load(model_path);
-            for(auto it = shape_map.begin(); it != shape_map.end();) {
-                // thread safe
-                _graph_map[model_path].Reshape(it->first, it->second);
-                ++it;
-            }
-            // thread safe
-            _graph_map[model_path].Optimize();
-            {// make sure thread safety
-                key id = std::this_thread::get_id();
-                LOG(INFO) << "CURRENT thread ID : " << id;
-                if(_thread_to_net.find(id) == _thread_to_net.end()) {
-                    _thread_to_net[id].init(_graph_map[model_path]);
-                }
-            }
-        } else {
-            key id = std::this_thread::get_id(); 
-            LOG(INFO) << "CURRENT thread ID : " << id; 
-            if (_thread_to_net.find(id) == _thread_to_net.end()) { 
-                _thread_to_net[id].init(_graph_map[model_path]); 
-            }
-        }
+        _model_path=model_path;
+        _shape_map=shape_map;
+//        if(_graph_map.count(model_path) <= 0) {
+//            // graph load is thread safe
+//            _graph_map[model_path].load(model_path);
+//            for(auto it = shape_map.begin(); it != shape_map.end();) {
+//                // thread safe
+//                _graph_map[model_path].Reshape(it->first, it->second);
+//                ++it;
+//            }
+//            // thread safe
+//            _graph_map[model_path].Optimize();
+//            {// make sure thread safety
+//                key id = std::this_thread::get_id();
+//                LOG(INFO) << "CURRENT thread ID : " << id;
+//                if(_thread_to_net.find(id) == _thread_to_net.end()) {
+//                    _thread_to_net[id].init(_graph_map[model_path]);
+//                }
+//            }
+//        } else {
+//            key id = std::this_thread::get_id();
+//            LOG(INFO) << "CURRENT thread ID : " << id;
+//            if (_thread_to_net.find(id) == _thread_to_net.end()) {
+//                _thread_to_net[id].init(_graph_map[model_path]);
+//            }
+//        }
+
     }
 
     inline Net<Ttype, Dtype, Ptype, RunType>& get_net(key id) {
-        if(_thread_to_net.find(id) != _thread_to_net.end()) { 
+        if(_thread_to_net.find(id) != _thread_to_net.end()) {
+//            LOG(INFO)<<"get "<<id;
+            return _thread_to_net[id];
+        }else{
+//            LOG(INFO)<<"create net for thread_id "<<id;
+            std::lock_guard<std::mutex> guard(this->_mut);
+            _thread_to_graph[id].load(_model_path);
+            _thread_to_graph[id].Optimize();
+            for(auto it = _shape_map.begin(); it != _shape_map.end();) {
+                // thread safe
+                _thread_to_graph[id].Reshape(it->first, it->second);
+                ++it;
+            }
+//            LOG(INFO)<<"create load success";
+            _thread_to_net[id].init(_thread_to_graph[id]);
+//            LOG(INFO)<<"create init success";
             return _thread_to_net[id];
         }
-        LOG(FATAL) << " target key(thread_id) not found in NetGraphWrapper";
+                LOG(FATAL) << " target key(thread_id) not found in NetGraphWrapper";
         return _thread_to_net[id];
     }
-    
+
 private:
+    std::unordered_map<std::string, std::vector<int>> _shape_map;
+    std::string _model_path;
     std::unordered_map<std::string, graph::Graph<Ttype, Dtype, Ptype>> _graph_map;
+    std::unordered_map<key, graph::Graph<Ttype, Dtype, Ptype>> _thread_to_graph;
     std::unordered_map<key, Net<Ttype, Dtype, Ptype, RunType>> _thread_to_net GUARDED_BY(this->_mut);
     std::mutex _mut;
 };
@@ -106,8 +127,9 @@ std::vector<Tensor4dPtr<Ttype, Dtype> > Worker<Ttype, Dtype, Ptype, RunType>::sy
         saber::SaberTimer<NV> my_time;
         my_time.start(ctx);
 #endif
-        net.prediction(); 
-
+//        LOG(INFO)<<"syn  before prediction";
+        net.prediction();
+//        LOG(INFO)<<"syn  after prediction";
 #ifdef ENABLE_OP_TIMER
         my_time.end(ctx); 
         {
@@ -151,33 +173,44 @@ std::vector<Tensor4dPtr<Ttype, Dtype> > Worker<Ttype, Dtype, Ptype, RunType>::sy
 
 template<typename Ttype, DataType Dtype, Precision Ptype, OpRunType RunType>
 void Worker<Ttype, Dtype, Ptype, RunType>::async_prediction(std::vector<Tensor4dPtr<typename target_host<Ttype>::type, Dtype> >& net_ins_list) {
-    std::lock_guard<std::mutex> guard(this->_async_que_mut);    
-    auto task = [&](std::vector<Tensor4dPtr<typename target_host<Ttype>::type, Dtype> >& ins) -> std::vector<Tensor4dPtr<Ttype, Dtype> > {
+    std::lock_guard<std::mutex> guard(this->_async_que_mut);
+
+    auto task = [&](std::vector<Tensor4d<typename target_host<Ttype>::type, Dtype> > ins) -> std::vector<Tensor4d<Ttype, Dtype> > {
             auto& net = MultiThreadModel<Ttype, Dtype, Ptype, RunType>::Global().get_net(std::this_thread::get_id());
-            //fill the graph inputs
+
             for(int i = 0; i < _inputs_in_order.size(); i++) {
                 auto d_tensor_in_p = net.get_in(_inputs_in_order[i]);
-                d_tensor_in_p->reshape(ins[i]->valid_shape());
-                d_tensor_in_p->copy_from(*ins[i]);
-                d_tensor_in_p->set_seq_offset(ins[i]->get_seq_offset());
+                d_tensor_in_p->reshape(ins[i].valid_shape());
+                d_tensor_in_p->copy_from(ins[i]);
+                d_tensor_in_p->set_seq_offset(ins[i].get_seq_offset());
             }
+
 
             net.prediction();
 
-            // get outputs of graph
-            std::vector<Tensor4dPtr<Ttype, Dtype>> ret;
+            std::vector<Tensor4d<Ttype, Dtype>> ret;
             for(auto out : _outputs_in_order) {
                 auto d_tensor_out_p = net.get_out(out);
-                ret.push_back(d_tensor_out_p);
+                Tensor4d<Ttype, Dtype> temp(d_tensor_out_p->valid_shape());
+                CHECK_EQ(temp.valid_size(),d_tensor_out_p->valid_size())<<"shape size must eq";
+                temp.copy_from(*d_tensor_out_p);
+                ret.push_back(temp);
             }
-
             return ret;
-        }; 
-    _async_que.push(this->RunAsync(task, net_ins_list)); 
+        };
+    std::vector<Tensor4d<typename target_host<Ttype>::type, Dtype> > tensor_ins;
+    for(auto tensor_ptr :net_ins_list){
+        Tensor4d<typename target_host<Ttype>::type, Dtype> temp (tensor_ptr->valid_shape());
+        temp.copy_from(*tensor_ptr);
+        temp.set_seq_offset(tensor_ptr->get_seq_offset());
+        tensor_ins.push_back(temp);
+    }
+
+    _async_que.push(this->RunAsync(task, tensor_ins));
 } 
 
 template<typename Ttype, DataType Dtype, Precision Ptype, OpRunType RunType>
-std::vector<Tensor4dPtr<Ttype, Dtype> > Worker<Ttype, Dtype, Ptype, RunType>::async_get_result() {
+std::vector<Tensor4d<Ttype, Dtype> > Worker<Ttype, Dtype, Ptype, RunType>::async_get_result() {
     std::lock_guard<std::mutex> guard(this->_async_que_mut);    
     auto result = std::move(_async_que.front());
     _async_que.pop();

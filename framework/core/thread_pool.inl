@@ -1,3 +1,11 @@
+#ifdef USE_X86_PLACE
+#include <mkl_service.h>
+
+#ifdef USE_OPENMP
+#include "omp.h"
+#endif
+
+#endif
 
 namespace anakin {
 
@@ -7,6 +15,13 @@ void ThreadPool::launch() {
             [i ,this]() {
                 // initial 
                 this->init();
+#ifdef USE_OPENMP
+                omp_set_dynamic(0);
+                omp_set_num_threads(1);
+#endif
+#ifdef USE_X86_PLACE
+                mkl_set_num_threads(1);
+#endif
                 for(;;) {
                     std::function<void(void)> task;
                     {
@@ -34,7 +49,9 @@ void ThreadPool::stop() {
     _stop = true;
 }
 
-void ThreadPool::init() {}
+void ThreadPool::init() {
+
+}
 
 void ThreadPool::auxiliary_funcs() {}
 

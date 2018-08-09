@@ -133,12 +133,12 @@ Status Graph<Ttype, Dtype, Ptype>::Optimize() EXCLUSIVE_LOCKS_REQUIRED(_mut) {
 
 
             if(std::is_same<Ttype,NV>::value){
-//                _nodes_exec_order = scheduler.get_exec_node_in_order();
+                _nodes_exec_order = scheduler.get_exec_node_in_order();
 
-                ConvElsFusionScheduler conv_eltwise_fusion_scheduler;
-                conv_eltwise_fusion_scheduler.RegIOResource(_vgraph);
-                conv_eltwise_fusion_scheduler.Run();
-                _nodes_exec_order = conv_eltwise_fusion_scheduler.get_exec_node_in_order();
+//                ConvElsFusionScheduler conv_eltwise_fusion_scheduler;
+//                conv_eltwise_fusion_scheduler.RegIOResource(_vgraph);
+//                conv_eltwise_fusion_scheduler.Run();
+//                _nodes_exec_order = conv_eltwise_fusion_scheduler.get_exec_node_in_order();
 
             }else{
                 _nodes_exec_order = scheduler.get_exec_node_in_order();

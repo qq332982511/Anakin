@@ -116,7 +116,7 @@ void one_thread_run(std::string path,int thread_id){
         }
 
         net_executer.prediction();
-
+        cudaDeviceSynchronize();
 #define LOG_OUTPUT
 #ifdef LOG_OUTPUT
         std::vector<Tensor4d<Target, AK_FLOAT>*> vout;
