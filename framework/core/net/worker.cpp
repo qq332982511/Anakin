@@ -41,10 +41,8 @@ struct NetGraphWrapper {
 
     inline Net<Ttype, Dtype, Ptype, RunType>& get_net(key id) {
         if(_thread_to_net.find(id) != _thread_to_net.end()) {
-//            LOG(INFO)<<"get "<<id;
             return _thread_to_net[id];
         }else{
-//            LOG(INFO)<<"create net for thread_id "<<id;
             std::lock_guard<std::mutex> guard(this->_mut);
             _thread_to_graph[id].load(_model_path);
             _thread_to_graph[id].Optimize();
@@ -53,9 +51,7 @@ struct NetGraphWrapper {
                 _thread_to_graph[id].Reshape(it->first, it->second);
                 ++it;
             }
-//            LOG(INFO)<<"create load success";
             _thread_to_net[id].init(_thread_to_graph[id]);
-//            LOG(INFO)<<"create init success";
             return _thread_to_net[id];
         }
                 LOG(FATAL) << " target key(thread_id) not found in NetGraphWrapper";
@@ -127,9 +123,8 @@ std::vector<Tensor4dPtr<Ttype, Dtype> > Worker<Ttype, Dtype, Ptype, RunType>::sy
         saber::SaberTimer<NV> my_time;
         my_time.start(ctx);
 #endif
-//        LOG(INFO)<<"syn  before prediction";
         net.prediction();
-//        LOG(INFO)<<"syn  after prediction";
+
 #ifdef ENABLE_OP_TIMER
         my_time.end(ctx); 
         {
