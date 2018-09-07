@@ -317,8 +317,7 @@ SaberStatus VenderLstm<X86, AK_FLOAT>::dispatch(
             break;
 
         default:
-            LOG(ERROR) << "not supported input activation";
-            return SaberUnImplError;
+            LOG(FATAL) << "not supported input activation";
         }
     }
 
